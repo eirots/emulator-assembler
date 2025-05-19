@@ -1,6 +1,4 @@
-#pragma once
-#include <cstdint>
-#include <string>
+#ifndef utils_h_
+#define utils_h_
 
-/*This function shall have the following prototype: */
-std::string convTen2Two(unsigned int baseTenValue);
+#endif

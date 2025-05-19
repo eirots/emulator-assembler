@@ -9,17 +9,17 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)   # .a / .lib
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)   # .so / .dylib
 
 
-add_library(myUtils_objects OBJECT
-    src/myUtils.cpp
+add_library(utils_objects OBJECT
+    src/utils.cpp
 )
 
-target_include_directories(myUtils_objects PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(utils_objects PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 
 # Build the main executable
 add_executable(emu4380
     src/main.cpp
-    $<TARGET_OBJECTS:myUtils_objects>
+    $<TARGET_OBJECTS:utils_objects>
 )
 target_include_directories(emu4380
     PUBLIC ${PROJECT_SOURCE_DIR}/include
@@ -37,8 +37,8 @@ enable_testing()
 
 #test executable
 add_executable(runTests
-    test/myTests.cpp
-    $<TARGET_OBJECTS:myUtils_objects>
+    test/test.cpp
+    $<TARGET_OBJECTS:utils_objects>
 
 )
 
