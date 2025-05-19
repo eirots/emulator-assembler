@@ -10,7 +10,7 @@ TODO:
 ## Worklog
 |date | hours worked | what did I work on? |
 |-----|--------------|---------------------|
-|5/19/25|TODO: | TODO: |
+|5/19/25| 2 hours | Set up base of project, added declarations for enums and globals and function prototypes  |
 
 
 ## Questions: 
