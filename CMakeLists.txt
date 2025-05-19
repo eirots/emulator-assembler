@@ -17,11 +17,11 @@ target_include_directories(myUtils_objects PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 
 # Build the main executable
-add_executable(b10tob2
+add_executable(emu4380
     src/main.cpp
     $<TARGET_OBJECTS:myUtils_objects>
 )
-target_include_directories(b10tob2
+target_include_directories(emu4380
     PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
