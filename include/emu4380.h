@@ -9,6 +9,7 @@ extern uint32_t* reg_file;
 extern unsigned char* prog_mem;  // default size is 131_072 elements/bytes
 extern uint32_t cntrl_regs[5];   // stores instruction operation, register operands, and immediate value
 extern uint32_t data_regs[2];    // stores register operand values retrieved from register file
+extern uint32_t mem_size;
 
 // enums
 enum RegNames { R0 = 0,  // general purpose registers
@@ -67,7 +68,7 @@ bool decode();
 bool execute();
 
 /**
- * @brief Initializes the memory for the emulator
+ * @brief Dynamically allocates size bytes of memory for the program memory, initializes all values in array to zero, and stores address of this memory in prog_mem
  * @return FALSE if unable to initalize memory, otherwise TRUE
  */
 bool init_mem(unsigned int size);
