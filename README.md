@@ -11,6 +11,7 @@ TODO:
 |date | hours worked | what did I work on? |
 |-----|--------------|---------------------|
 |5/19/25| 2 hours | Set up base of project, added declarations for enums and globals and function prototypes  |
+|5/27/25 | 3 hours | Added function comments, added to enums etc, began architecture. Less code today, more desiging. | 
 
 
 ## Questions: 
