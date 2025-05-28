@@ -12,6 +12,7 @@ TODO:
 |-----|--------------|---------------------|
 |5/19/25| 2 hours | Set up base of project, added declarations for enums and globals and function prototypes  |
 |5/27/25 | 3 hours | Added function comments, added to enums etc, began architecture. Less code today, more desiging. | 
+|5/28/25 | 1.4 hours | Added executable for makebinary, updated cmakelists to include. Added another folder to test where this translation will happen. |
 
 
 ## Questions: 
