@@ -15,6 +15,14 @@ add_library(utils_objects OBJECT
 
 target_include_directories(utils_objects PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
+add_executable(makebinary
+    tools/makebinary.cpp
+    $<TARGET_OBJECTS:utils_objects>
+)
+target_include_directories(makebinary
+    PUBLIC $(PROJECT_SOURCE_DIR)/include   
+)
+
 
 # Build the main executable
 add_executable(emu4380
