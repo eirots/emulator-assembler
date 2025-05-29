@@ -14,12 +14,6 @@ int main(int argC, char** argV) {
         return false;
     }
 
-    if (argC < 2) {
-        // default minimum size
-        uint32_t mem_size = 131072;
-        cout << "memsize defaulted to: " << mem_size << endl;
-    }
-
     ifstream input(argV[1]);
     if (!input.is_open()) {
         return false;

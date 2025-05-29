@@ -3,6 +3,13 @@
 
 // contains function prototypes and declarations for structural elements of the processor
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <limits>
+#include <vector>
+
+using namespace std;
 
 // Global variables
 extern uint32_t* reg_file;
@@ -72,5 +79,11 @@ bool execute();
  * @return FALSE if unable to initalize memory, otherwise TRUE
  */
 bool init_mem(unsigned int size);
+
+/**
+ * @brief First call to start the emulator, used heavily in testing
+ * @return ints that you would expect from a main.
+ */
+int runEmulator(int argc, char** argv);
 
 #endif
