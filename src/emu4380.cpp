@@ -6,7 +6,6 @@ bool fetch() {
 }
 
 bool decode() {
-    // TODO:
     return false;
 }
 

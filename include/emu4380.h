@@ -12,6 +12,7 @@
 using namespace std;
 
 // Global variables
+extern uint32_t PC = 0;
 extern uint32_t* reg_file;
 extern unsigned char* prog_mem;  // default size is 131_072 elements/bytes
 extern uint32_t cntrl_regs[5];   // stores instruction operation, register operands, and immediate value
@@ -42,7 +43,7 @@ enum RegNames { R0 = 0,  // general purpose registers
                 FP = 20,  // frame pointer (points to first word beneath return address)
                 HP = 21   // heap pointer (initially set to SL, grows upwards)
 };
-enum CntrlRegNames { OPERATION = 0,
+enum CntrlRegNames { OPERATION = 0,  // opcode
                      OPERAND_1 = 1,
                      OPERAND_2 = 2,
                      OPERAND_3 = 3,
@@ -53,7 +54,6 @@ enum DataRegNames { REG_VAL_1 = 0,
 };
 
 // function prototypes
-
 /**
  * @brief Retrieves the bytes for the next instruction, and places them in the appropriate cntrl_regs
  * @details Also increments the PC so it points at the next instruction.

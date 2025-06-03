@@ -16,7 +16,7 @@ TODO:
 |5/29/25 | 3 hours | Made some changes to build, added validation on start, updated build path for test executable | 
 
 ## Questions: 
-Are wrapper makefiles okay in the future? Cmake leaves behind a lot of artifacts while building, but also dumps the makefile wherever the target destination is. This leaves a lot of clutter in the project. 
+Can we use vectors for handling memory? Small upfront cost, but easier to resize in the future
 
 ## Validation
 ### Part 1:
