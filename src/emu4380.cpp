@@ -15,8 +15,23 @@ bool execute() {
 }
 
 bool init_mem(unsigned int size) {
-    // TODO:
-    return false;
+    uint32_t mem_size;
+    unsigned char* prog_mem;
+    // first allocation
+    if (prog_mem == nullptr) {
+        prog_mem = static_cast<unsigned char*>(std::malloc(size));
+        if (!prog_mem) return false;
+        mem_size = size;
+        // TODO: need to finish initializing reg_file
+        return true;
+    }
+
+    void* new_block_of_memory = std::realloc(prog_mem, size);
+    if (!new_block_of_memory) return false;  // OUT OF MEMORY
+
+    prog_mem = static_cast<unsigned char*>(new_block_of_memory);
+    mem_size = size;
+    return true;
 }
 
 int runEmulator(int argc, char** argv) {
@@ -42,6 +57,7 @@ int runEmulator(int argc, char** argv) {
                 throw std::out_of_range("Bad range, range is (0, 4,294,967,295]");
             }
             mem_size = static_cast<uint32_t>(tmp);
+            init_mem(mem_size);
 
         } catch (const exception&) {
             cerr << "Invalid memory size, range is (0, 4,294,967,295]" << endl;

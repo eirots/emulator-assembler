@@ -14,7 +14,7 @@ TODO:
 |5/27/25 | 3 hours | Added function comments, added to enums etc, began architecture. Less code today, more desiging. | 
 |5/28/25 | 1.4 hours | Added executable for makebinary, updated cmakelists to include. Added another folder to test where this translation will happen. |
 |5/29/25 | 3 hours | Made some changes to build, added validation on start, updated build path for test executable | 
-
+|6/3/25 | 2 hours (so far) | Worked on init_mem, added some files for other sections later. Most work was done not on computer, drawing diagrams/flowcharts etc|
 ## Questions: 
 Can we use vectors for handling memory? Small upfront cost, but easier to resize in the future
 

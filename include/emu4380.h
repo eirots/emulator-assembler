@@ -10,9 +10,9 @@
 #include <vector>
 
 using namespace std;
-
+using addr_t = std::uint32_t;
 // Global variables
-extern uint32_t PC = 0;
+
 extern uint32_t* reg_file;
 extern unsigned char* prog_mem;  // default size is 131_072 elements/bytes
 extern uint32_t cntrl_regs[5];   // stores instruction operation, register operands, and immediate value
