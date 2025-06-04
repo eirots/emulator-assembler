@@ -7,6 +7,11 @@ std::uint32_t mem_size = 0;
 
 bool fetch() {
     // TODO:
+    // read 8 bytes starting at the address at PC
+    // convert those bytes into a 64-bit word
+    // split the word into the 5 fields so that decode can validate
+    // increment PC by 8 (8 bytes, size of 1 instruction )
+    // return TRUE on success, false if PC address is OOB.
     return false;
 }
 
@@ -56,6 +61,28 @@ bool init_mem(unsigned int size) {
     return true;
 }
 
+bool load_binary(const char* filename) {
+    ifstream in(filename, std::ios::binary | std::ios::ate);
+    if (!in) {
+        cerr << "Cannot open file: " << filename << endl;
+        return false;
+    }
+
+    streamsize file_size = in.tellg();
+    if (file_size > mem_size) {
+        cerr << "Program too large, file is " << file_size << " bytes, reserved RAM is " << mem_size << " bytes" << endl;
+        return false;
+    }
+
+    in.seekg(0, std::ios::beg);
+
+    if (!in.read(reinterpret_cast<char*>(prog_mem), file_size)) {
+        cerr << "Error while reading " << filename << endl;
+        return false;
+    }
+    return true;
+}
+
 int runEmulator(int argc, char** argv) {
     if (argc < 2) {
         cout << "Usage: " << argv[0] << " INPUT_BINARY_FILE [RESERVED_MEMORY]\n";
@@ -68,6 +95,7 @@ int runEmulator(int argc, char** argv) {
     if (argc < 3) {
         // default minimum size
         mem_size = 131'072;
+
         // cout << "memsize defaulted to: " << mem_size << endl;
     } else {
         try {
@@ -79,7 +107,6 @@ int runEmulator(int argc, char** argv) {
                 throw std::out_of_range("Bad range, range is (0, 4,294,967,295]");
             }
             mem_size = static_cast<uint32_t>(tmp);
-            init_mem(mem_size);
 
         } catch (const exception&) {
             cerr << "Invalid memory size, range is (0, 4,294,967,295]" << endl;
@@ -88,6 +115,11 @@ int runEmulator(int argc, char** argv) {
 
         cout << "memsize set to: " << mem_size << endl;
     }
+
+    if (!init_mem(mem_size)) return 1;
+
+    if (!load_binary(argv[1])) return 1;
+
     cout << "path given was: " << argv[1] << endl;
 
     return 0;

@@ -3,6 +3,12 @@ project(CS4320_PROJECT0)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
+
+
+
 
 # ──────────────────────────────────────────────────────────────
 # Where final artefacts go
@@ -55,6 +61,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
+
+
 # ──────────────────────────────────────────────────────────────
 # Unit-test target
 #   NOTE:  we do NOT compile src/main.cpp here – GTest supplies
@@ -66,6 +74,10 @@ add_executable(runTests
     src/emu4380.cpp
     $<TARGET_OBJECTS:utils_objects>
 )
+
+
+
+
 target_include_directories(runTests
     PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
@@ -74,4 +86,18 @@ target_link_libraries(runTests
 )
 
 include(GoogleTest)
-gtest_discover_tests(runTests)
+# copy file beside the executable if you haven't already
+add_custom_command(
+    TARGET runTests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/test/testFiles/smalladd.bin
+            $<TARGET_FILE_DIR:runTests>
+)
+add_custom_target(check
+    COMMAND runTests
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}   # = <proj>/bin
+    DEPENDS runTests)
+
+
+gtest_discover_tests(runTests
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:runTests>)
