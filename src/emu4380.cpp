@@ -1,4 +1,9 @@
 #include "emu4380.h"
+std::uint32_t* reg_file = nullptr;
+unsigned char* prog_mem = nullptr;
+std::uint32_t cntrl_regs[5] = {};
+std::uint32_t data_regs[2] = {};
+std::uint32_t mem_size = 0;
 
 bool fetch() {
     // TODO:
@@ -14,23 +19,40 @@ bool execute() {
     return false;
 }
 
+bool init_registers() {
+    if (reg_file) return true;  // already initialized
+
+    reg_file = static_cast<uint32_t*>(
+        malloc(NUM_REGS * sizeof(uint32_t)));
+
+    if (!reg_file) return false;  // no memory available to allocate regs
+    memset(reg_file, 0, NUM_REGS * sizeof(uint32_t));
+    return true;
+}
+
 bool init_mem(unsigned int size) {
-    uint32_t mem_size;
-    unsigned char* prog_mem;
     // first allocation
     if (prog_mem == nullptr) {
         prog_mem = static_cast<unsigned char*>(std::malloc(size));
         if (!prog_mem) return false;
-        mem_size = size;
-        // TODO: need to finish initializing reg_file
-        return true;
+
+    } else {  // resizing
+        void* new_block_of_memory = std::realloc(prog_mem, size);
+        if (!new_block_of_memory) return false;  // OUT OF MEMORY
+
+        prog_mem = static_cast<unsigned char*>(new_block_of_memory);
     }
-
-    void* new_block_of_memory = std::realloc(prog_mem, size);
-    if (!new_block_of_memory) return false;  // OUT OF MEMORY
-
-    prog_mem = static_cast<unsigned char*>(new_block_of_memory);
     mem_size = size;
+
+    if (!init_registers()) return false;  // couldn't initialize registers
+
+    reg_file[PC] = 0;
+    reg_file[SL] = 0;
+    reg_file[SB] = mem_size;
+    reg_file[SP] = mem_size;
+    reg_file[FP] = reg_file[SP];
+    reg_file[HP] = reg_file[SL];
+
     return true;
 }
 
@@ -41,12 +63,12 @@ int runEmulator(int argc, char** argv) {
         cout << "RESERVED_MEMORY (optional):\tPositive integer, default 131,072 bytes, max 4,294,967,295\n";
         return 1;
     }
-    uint32_t mem_size;
+    mem_size;
 
     if (argc < 3) {
         // default minimum size
         mem_size = 131'072;
-        cout << "memsize defaulted to: " << mem_size << endl;
+        // cout << "memsize defaulted to: " << mem_size << endl;
     } else {
         try {
             size_t pos = 0;

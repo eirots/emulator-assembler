@@ -1,3 +1,4 @@
+#include "emu4380.h"
 #include "gtest/gtest.h"
 
 int runEmulator(int argc, char** argv);
@@ -26,4 +27,15 @@ TEST(StartupTest, InvalidMemorySize) {
     // stoi() would throw an exception, so you might want to catch this in main()
     // Here, we expect it to crash or handle gracefully
     EXPECT_EQ(runEmulator(argc, const_cast<char**>(argv)), 1);
+}
+
+TEST(StartupTest, RegisterInitialize) {
+    unsigned int testmemsize = 65536;
+    init_mem(testmemsize);
+    EXPECT_EQ(reg_file[PC], 0);
+    EXPECT_EQ(reg_file[SL], 0);
+    EXPECT_EQ(reg_file[SB], testmemsize);
+    EXPECT_EQ(reg_file[SP], testmemsize);
+    EXPECT_EQ(reg_file[FP], reg_file[SP]);
+    EXPECT_EQ(reg_file[HP], reg_file[SL]);
 }

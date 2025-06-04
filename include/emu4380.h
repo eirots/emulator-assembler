@@ -10,38 +10,38 @@
 #include <vector>
 
 using namespace std;
-using addr_t = std::uint32_t;
-// Global variables
 
+// Global variables
 extern uint32_t* reg_file;
 extern unsigned char* prog_mem;  // default size is 131_072 elements/bytes
 extern uint32_t cntrl_regs[5];   // stores instruction operation, register operands, and immediate value
 extern uint32_t data_regs[2];    // stores register operand values retrieved from register file
 extern uint32_t mem_size;
+constexpr size_t NUM_REGS = 22;
 
 // enums
-enum RegNames { R0 = 0,  // general purpose registers
-                R1 = 1,
-                R2 = 2,
-                R3 = 3,
-                R4 = 4,
-                R5 = 5,
-                R6 = 6,
-                R7 = 7,
-                R8 = 8,
-                R9 = 9,
-                R10 = 10,
-                R11 = 11,
-                R12 = 12,
-                R13 = 13,
-                R14 = 14,
-                R15 = 15,
-                PC = 16,  // program counter, initialized to the address of first instruction in memory
-                SL = 17,  // stack lower limit (lowest legal address available to stack)
-                SB = 18,  // stack bottom (highest address)
-                SP = 19,  // stack pointer (latest allocated byte on the stack, grows downward)
-                FP = 20,  // frame pointer (points to first word beneath return address)
-                HP = 21   // heap pointer (initially set to SL, grows upwards)
+enum RegNames : std::size_t { R0 = 0,  // general purpose registers
+                              R1 = 1,
+                              R2 = 2,
+                              R3 = 3,
+                              R4 = 4,
+                              R5 = 5,
+                              R6 = 6,
+                              R7 = 7,
+                              R8 = 8,
+                              R9 = 9,
+                              R10 = 10,
+                              R11 = 11,
+                              R12 = 12,
+                              R13 = 13,
+                              R14 = 14,
+                              R15 = 15,
+                              PC = 16,  // program counter, initialized to the address of first instruction in memory
+                              SL = 17,  // stack lower limit (lowest legal address available to stack)
+                              SB = 18,  // stack bottom (highest address)
+                              SP = 19,  // stack pointer (latest allocated byte on the stack, grows downward)
+                              FP = 20,  // frame pointer (points to first word beneath return address)
+                              HP = 21   // heap pointer (initially set to SL, grows upwards)
 };
 enum CntrlRegNames { OPERATION = 0,  // opcode
                      OPERAND_1 = 1,
