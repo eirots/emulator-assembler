@@ -7,6 +7,8 @@ TODO:
 ## How to use:
 TODO: 
 
+
+
 ## Worklog
 |date | hours worked | what did I work on? |
 |-----|--------------|---------------------|
@@ -16,6 +18,7 @@ TODO:
 |5/29/25 | 3 hours | Made some changes to build, added validation on start, updated build path for test executable | 
 |6/3/25 | 3 hours  | Finished init_mem, added some files for other sections later. Most work was done not on computer, drawing diagrams/flowcharts etc|
 |6/4/25 | 3.75ish hours | designed on paper, designed structures for handling memory. Updated tests and build path for use with binaries later down the line. Changed make/cmake to play nice with test folder|
+|6/5/25 | 1.5 hours | added some more options for make, added tests for the memory loader|
 ## Questions: 
 Are structs ok / encouraged? 
 

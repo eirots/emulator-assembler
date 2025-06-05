@@ -8,6 +8,7 @@ std::uint32_t mem_size = 0;
 bool fetch() {
     // TODO:
     // read 8 bytes starting at the address at PC
+
     // convert those bytes into a 64-bit word
     // split the word into the 5 fields so that decode can validate
     // increment PC by 8 (8 bytes, size of 1 instruction )
@@ -16,6 +17,7 @@ bool fetch() {
 }
 
 bool decode() {
+    // TODO:
     return false;
 }
 
@@ -61,17 +63,15 @@ bool init_mem(unsigned int size) {
     return true;
 }
 
-bool load_binary(const char* filename) {
+uint32_t load_binary(const char* filename) {
     ifstream in(filename, std::ios::binary | std::ios::ate);
     if (!in) {
-        cerr << "Cannot open file: " << filename << endl;
-        return false;
+        return 1;
     }
 
     streamsize file_size = in.tellg();
     if (file_size > mem_size) {
-        cerr << "Program too large, file is " << file_size << " bytes, reserved RAM is " << mem_size << " bytes" << endl;
-        return false;
+        return 2;
     }
 
     in.seekg(0, std::ios::beg);
@@ -80,7 +80,7 @@ bool load_binary(const char* filename) {
         cerr << "Error while reading " << filename << endl;
         return false;
     }
-    return true;
+    return 0;
 }
 
 int runEmulator(int argc, char** argv) {
@@ -113,17 +113,24 @@ int runEmulator(int argc, char** argv) {
             return 1;
         }
 
-        cout << "memsize set to: " << mem_size << endl;
+        // cout << "memsize set to: " << mem_size << endl;
     }
 
     if (!init_mem(mem_size)) return 1;
 
-    if (!load_binary(argv[1])) return 1;
+    unsigned int binloadresult = load_binary(argv[1]);
+    if (binloadresult == 1) {
+        cerr << "Cannot open file: " << argv[1] << endl;
+        return 1;
+    } else if (binloadresult == 2) {
+        cerr << "INSUFFICIENT MEMORY SPACE \n";
+        return 2;
+    }
     // TODO: add tests for this section. make sure that
-    //       memory looks how we expect it to
-    //       instructions are in the correct order
+    //       -memory looks how we expect it to
+    //       -instructions are in the correct order
 
-    cout << "path given was: " << argv[1] << endl;
+    // cout << "path given was: " << argv[1] << endl;
 
     return 0;
 }

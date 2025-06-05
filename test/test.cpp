@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 int runEmulator(int argc, char** argv);
+bool load_binary(const char* filename);
 
 TEST(StartupTest, NoArguments) {
     const char* argv[] = {"emu4380"};
@@ -37,3 +38,20 @@ TEST(StartupTest, RegisterInitialize) {
     EXPECT_EQ(reg_file[FP], reg_file[SP]);
     EXPECT_EQ(reg_file[HP], reg_file[SL]);
 }  // expect all of these to pass
+
+TEST(StartupTest, MemoryLoader) {
+    const char* filename = "smalladd.bin";
+    const unsigned char expected[] = {0x00, 0x05, 0x0F, 0x00, 0x12};
+    init_mem(65536);
+    unsigned int temp = load_binary(filename);
+
+    for (int i = 0; i < sizeof(expected) / sizeof(expected[0]); i++) {
+        EXPECT_EQ(prog_mem[i], expected[i]);
+    }
+}
+
+TEST(StartupTest, MemoryLoaderInvalidMemorySize) {
+    const char* argv[] = {"emu4380", "smalladd.bin", "1"};
+    int argc = 3;
+    EXPECT_EQ(runEmulator(argc, const_cast<char**>(argv)), 2);
+}
