@@ -119,6 +119,9 @@ int runEmulator(int argc, char** argv) {
     if (!init_mem(mem_size)) return 1;
 
     if (!load_binary(argv[1])) return 1;
+    // TODO: add tests for this section. make sure that
+    //       memory looks how we expect it to
+    //       instructions are in the correct order
 
     cout << "path given was: " << argv[1] << endl;
 
