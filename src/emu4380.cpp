@@ -6,18 +6,20 @@ std::uint32_t data_regs[2] = {};
 std::uint32_t mem_size = 0;
 
 bool fetch() {
-    // TODO:
-    // read 8 bytes starting at the address at PC
+    if (reg_file[PC] + 5 > mem_size) return false;  // about to run out of memory
 
-    // convert those bytes into a 64-bit word
-    // split the word into the 5 fields so that decode can validate
-    // increment PC by 8 (8 bytes, size of 1 instruction )
-    // return TRUE on success, false if PC address is OOB.
-    return false;
+    for (size_t i = 0; i < 5; i++) cntrl_regs[i] = prog_mem[reg_file[PC]++];
+
+    return true;
 }
 
 bool decode() {
     // TODO:
+
+    // verifies that the specified operation (or TRP) and operands as specified in
+    // cntrl_regs are valid
+
+    // ex, MOV operates on state registers, and there are a limited number of these. A MOV with an RD value of 55 would be a malformed instruction.
     return false;
 }
 

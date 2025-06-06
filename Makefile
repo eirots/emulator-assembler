@@ -18,7 +18,7 @@ test: build
 # Quick run of GTest, builds and runs.
 # ------------------------------------------------------------------
 check: build
-	@cd bin && ./runTests
+	@cmake --build build --target check 
 
 # ------------------------------------------------------------------
 # Example helper to run the emulator manually.

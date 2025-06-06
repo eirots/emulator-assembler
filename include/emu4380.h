@@ -75,6 +75,12 @@ bool decode();
 bool execute();
 
 /**
+ * @brief Helper that loads a binary file into program memory
+ * @return 1 if file can't be opened, 2 if insufficient memory space, otherwise 0.
+ */
+uint32_t load_binary(const char* filename);
+
+/**
  * @brief Dynamically allocates size bytes of memory for the program memory, initializes all values in array to zero, and stores address of this memory in prog_mem
  * @return FALSE if unable to initalize memory, otherwise TRUE
  */

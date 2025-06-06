@@ -3,101 +3,73 @@ project(CS4320_PROJECT0)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${PROJECT_SOURCE_DIR}/bin)
+
+# ──────────────────────────────────────────────────────────────
+# Where ALL artefacts go (inside build tree for cleanliness)
+# ──────────────────────────────────────────────────────────────
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
 
-
-
-
 # ──────────────────────────────────────────────────────────────
-# Where final artefacts go
+# Shared object library for utils.cpp (re-used by several exe’s)
 # ──────────────────────────────────────────────────────────────
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  ${PROJECT_SOURCE_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${PROJECT_SOURCE_DIR}/lib)   # .a / .lib
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${PROJECT_SOURCE_DIR}/lib)   # .so / .dylib
+add_library(utils_objects OBJECT src/utils.cpp)
+target_include_directories(utils_objects PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # ──────────────────────────────────────────────────────────────
-# Object library for code that is reused (utils.cpp)
+# Tools / executables
 # ──────────────────────────────────────────────────────────────
-add_library(utils_objects OBJECT
-    src/utils.cpp
-)
-target_include_directories(utils_objects
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
-)
+add_executable(makebinary tools/makebinary.cpp  $<TARGET_OBJECTS:utils_objects>)
+target_include_directories(makebinary PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+add_executable(emu4380     src/main.cpp src/emu4380.cpp $<TARGET_OBJECTS:utils_objects>)
+target_include_directories(emu4380 PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # ──────────────────────────────────────────────────────────────
-# Tool: makebinary
-# ──────────────────────────────────────────────────────────────
-add_executable(makebinary
-    tools/makebinary.cpp
-    $<TARGET_OBJECTS:utils_objects>
-)
-target_include_directories(makebinary
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
-)
-
-# ──────────────────────────────────────────────────────────────
-# Main emulator executable
-# ──────────────────────────────────────────────────────────────
-add_executable(emu4380
-    src/main.cpp
-    src/emu4380.cpp
-    $<TARGET_OBJECTS:utils_objects>
-)
-target_include_directories(emu4380
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
-)
-
-# ──────────────────────────────────────────────────────────────
-# GoogleTest
+#  GoogleTest + GoogleMock (fetched once)
 # ──────────────────────────────────────────────────────────────
 include(FetchContent)
 FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+  googletest
+  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
-FetchContent_MakeAvailable(googletest)
+FetchContent_MakeAvailable(googletest)   # provides GTest::gtest, GTest::gmock, etc.
+
 enable_testing()
-
-
 
 # ──────────────────────────────────────────────────────────────
 # Unit-test target
-#   NOTE:  we do NOT compile src/main.cpp here – GTest supplies
-#   its own main().  We only need the emulator implementation
-#   and utils.
 # ──────────────────────────────────────────────────────────────
 add_executable(runTests
     test/test.cpp
     src/emu4380.cpp
     $<TARGET_OBJECTS:utils_objects>
 )
+target_include_directories(runTests PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-
-
-
-target_include_directories(runTests
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
-)
+# ---  NEW: link gMock as well  --------------------------------
 target_link_libraries(runTests
-    PRIVATE GTest::gtest_main
+    PRIVATE
+      GTest::gtest_main   # supplies main()
+      GTest::gmock        # EXPECT_THAT, matchers, etc.
 )
 
-include(GoogleTest)
-# copy file beside the executable if you haven't already
+# Copy sample binary beside test executable
 add_custom_command(
-    TARGET runTests POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${CMAKE_SOURCE_DIR}/test/testFiles/smalladd.bin
-            $<TARGET_FILE_DIR:runTests>
+  TARGET runTests POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${CMAKE_SOURCE_DIR}/test/testFiles/smalladd.bin
+          $<TARGET_FILE_DIR:runTests>
 )
+
+# Convenience ‘make check’ target
 add_custom_target(check
-    COMMAND runTests
-    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}   # = <proj>/bin
-    DEPENDS runTests)
+  COMMAND runTests
+  WORKING_DIRECTORY $<TARGET_FILE_DIR:runTests>
+  DEPENDS runTests)
 
-
+# Let CTest discover individual Google-test cases
+include(GoogleTest)
 gtest_discover_tests(runTests
-    WORKING_DIRECTORY $<TARGET_FILE_DIR:runTests>)
+  WORKING_DIRECTORY $<TARGET_FILE_DIR:runTests>)
