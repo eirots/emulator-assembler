@@ -2,7 +2,7 @@
 //  Google-Test file:  test/test.cpp
 // ──────────────────────────────────────────────────────────────
 #include <gmock/gmock.h>  // EXPECT_THAT, ElementsAreArray
-#include <gtest/gtest.h>
+#include <gtest/gtest.h>  // General GTest stuff
 
 #include <array>
 #include <cstring>

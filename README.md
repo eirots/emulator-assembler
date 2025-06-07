@@ -19,6 +19,7 @@ TODO:
 |6/3/25 | 3 hours  | Finished init_mem, added some files for other sections later. Most work was done not on computer, drawing diagrams/flowcharts etc|
 |6/4/25 | 3.75ish hours | designed on paper, designed structures for handling memory. Updated tests and build path for use with binaries later down the line. Changed make/cmake to play nice with test folder|
 |6/5/25 | 1.5 hours | added some more options for make, added tests for the memory loader|
+|6/6/25 | 3 hours | Added functionality to fetch(), completely redid the test file AND cmakelists.txt. Laid out (bad) prototypes for instruction set.|
 ## Questions: 
 Are structs ok / encouraged? 
 

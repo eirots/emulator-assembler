@@ -1,4 +1,11 @@
 #include "emu4380.h"
+
+#include "arith.h"
+#include "interrupt.h"
+#include "jump.h"
+#include "move.h"
+#include "utils.h"
+
 std::uint32_t* reg_file = nullptr;
 unsigned char* prog_mem = nullptr;
 std::uint32_t cntrl_regs[5] = {};
@@ -16,8 +23,7 @@ bool fetch() {
 bool decode() {
     // TODO:
 
-    // verifies that the specified operation (or TRP) and operands as specified in
-    // cntrl_regs are valid
+    // verifies that the specified operation (or TRP) and operands as specified cntrl_regs are valid
 
     // ex, MOV operates on state registers, and there are a limited number of these. A MOV with an RD value of 55 would be a malformed instruction.
     return false;
@@ -25,6 +31,11 @@ bool decode() {
 
 bool execute() {
     // TODO:
+
+    // Executes the effects of decoded and validated instruction or TRP on the state members (regs, memory, etc.) as
+    // indicated by cntrl_regs and data_regs, and in accordance with instruction or TRP's specification
+
+    // returns FALSE if illegal operation is encountered (does not execute instruction), otherwise TRUE
     return false;
 }
 
