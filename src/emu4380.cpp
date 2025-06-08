@@ -4,6 +4,7 @@
 #include "interrupt.h"
 #include "jump.h"
 #include "move.h"
+#include "opcode.h"
 #include "utils.h"
 
 std::uint32_t* reg_file = nullptr;
@@ -13,9 +14,22 @@ std::uint32_t data_regs[2] = {};
 std::uint32_t mem_size = 0;
 
 bool fetch() {
-    if (reg_file[PC] + 5 > mem_size) return false;  // about to run out of memory
+    constexpr size_t INSTR_SIZE = 8;
 
-    for (size_t i = 0; i < 5; i++) cntrl_regs[i] = prog_mem[reg_file[PC]++];
+    if (reg_file[PC] + INSTR_SIZE > mem_size) return false;  // about to run out of memory
+
+    cntrl_regs[OPERATION] = prog_mem[reg_file[PC]++];
+    cntrl_regs[OPERAND_1] = prog_mem[reg_file[PC]++];
+    cntrl_regs[OPERAND_2] = prog_mem[reg_file[PC]++];
+    cntrl_regs[OPERAND_3] = prog_mem[reg_file[PC]++];
+
+    uint32_t imm = 0;                                              // building immediate
+    imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]);        // least-significant
+    imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]) << 8;   // next
+    imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]) << 16;  // next                   bits 23
+    imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]) << 24;  // most-significant byte, bits 31-34
+
+    cntrl_regs[IMMEDIATE] = imm;
 
     return true;
 }
@@ -25,7 +39,55 @@ bool decode() {
 
     // verifies that the specified operation (or TRP) and operands as specified cntrl_regs are valid
 
-    // ex, MOV operates on state registers, and there are a limited number of these. A MOV with an RD value of 55 would be a malformed instruction.
+    switch (cntrl_regs[OPERATION]) {
+        case OP_JMP:
+            break;
+        case OP_MOV:
+            break;
+        case OP_MOVI:
+            break;
+        case OP_LDA:
+            break;
+        case OP_STR:
+            break;
+        case OP_LDR:
+            break;
+        case OP_STB:
+            break;
+        case OP_LDB:
+            break;
+        case OP_ADD:
+            break;
+        case OP_ADDI:
+            break;
+        case OP_SUB:
+            break;
+        case OP_SUBI:
+            break;
+        case OP_MUL:
+            break;
+        case OP_MULI:
+            break;
+        case OP_DIV:
+            break;
+        case OP_SDIV:
+            break;
+        case OP_DIVI:
+            break;
+        case OP_TRP:
+            break;
+    }
+
+    // ex, MOV operates on state registers, and there are a limited number of these. A MOV with an RD value of 55 would be a
+    //      malformed instruction.
+
+    // Also retrieve register values from the register file and place those values in appropriate data_regs as indicated by the
+    //   register operands present in cntrl_regs
+
+    // NOTE: Immediate value instructions shall result in immediate value operands being placed in CNTRL_REGS during fetch stage
+    //       Values shall remain in cntrl_regs where they are sourced during execute phase, vs being placed in data_regs
+
+    // Valid i
     return false;
 }
 
@@ -139,11 +201,6 @@ int runEmulator(int argc, char** argv) {
         cerr << "INSUFFICIENT MEMORY SPACE \n";
         return 2;
     }
-    // TODO: add tests for this section. make sure that
-    //       -memory looks how we expect it to
-    //       -instructions are in the correct order
-
-    // cout << "path given was: " << argv[1] << endl;
 
     return 0;
 }

@@ -64,7 +64,7 @@ bool fetch();
 /**
  * @brief Verifies that the specified operation (or TRP) and operands specified in cntrl_regs are valid. Also retrieves register values from register file and places these in appropriate data_regs as indicated by operands present in cntrl_regs
  * @details A MOV instruction operates on state registers, and there are a limited number of these; a MOV with an RD value of 55 would be a malformed instruction.
- * @return FALSE if invalid instruction is encounterd, otherwise TRUE
+ * @return FALSE if invalid instruction is encountered, otherwise TRUE
  */
 bool decode();
 

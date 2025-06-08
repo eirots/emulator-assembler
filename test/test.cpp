@@ -83,15 +83,20 @@ TEST_F(EmulatorTest, ProgramMemoryMatchesExpected) {
 
 // ---------------- fetch behaviour -----------------------------
 TEST_F(EmulatorTest, FetchSucceedsAndCopiesBytes) {
-    constexpr std::array<unsigned char, 5> kExpected{0x00, 0x05, 0x0F, 0x00, 0x12};
+    const std::array<uint8_t, 8> raw = {
+        0x13, 0x01, 0x02, 0x00,
+        0x78, 0x56, 0x34, 0x12  // immediate 0x12345678
+    };
+    std::copy(raw.begin(), raw.end(), prog_mem);
+    ASSERT_TRUE(fetch());
 
-    ASSERT_TRUE(fetch());  // should succeed
-    std::vector<unsigned char> buffer(prog_mem,
-                                      prog_mem + kExpected.size());
-    EXPECT_THAT(buffer,
-                ::testing::ElementsAreArray((unsigned char[]){0x00, 0x05, 0x0F, 0x00, 0x12}));
+    EXPECT_EQ(cntrl_regs[OPERATION], 0x13u);
+    EXPECT_EQ(cntrl_regs[OPERAND_1], 0x01u);  // rd
+    EXPECT_EQ(cntrl_regs[OPERAND_2], 0x02u);  // rs
+    EXPECT_EQ(cntrl_regs[OPERAND_3], 0x00u);  // rt / unused
+    EXPECT_EQ(cntrl_regs[IMMEDIATE], 0x12345678u);
 
-    EXPECT_EQ(reg_file[PC], 5u);  // PC advanced by 5
+    EXPECT_EQ(reg_file[PC], 8u);  // PC advanced by 8 bytes
 }
 
 TEST_F(EmulatorTest, FetchFailsWhenOutOfBounds) {

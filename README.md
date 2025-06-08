@@ -20,6 +20,7 @@ TODO:
 |6/4/25 | 3.75ish hours | designed on paper, designed structures for handling memory. Updated tests and build path for use with binaries later down the line. Changed make/cmake to play nice with test folder|
 |6/5/25 | 1.5 hours | added some more options for make, added tests for the memory loader|
 |6/6/25 | 3 hours | Added functionality to fetch(), completely redid the test file AND cmakelists.txt. Laid out (bad) prototypes for instruction set.|
+|6/7/25 | 3 hours | Realized I had made a mistake in fetch and corrected it, added comments for what to do with instructions. Started working on decode.| 
 ## Questions: 
 Are structs ok / encouraged? 
 

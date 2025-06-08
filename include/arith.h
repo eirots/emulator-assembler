@@ -1,6 +1,7 @@
+// arith.h
+
 #ifndef arith_h_
 #define arith_h_
-
 /**
  * @brief Add RS1 to RS2, store result in RD
  * @details
