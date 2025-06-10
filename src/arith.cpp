@@ -8,11 +8,11 @@ bool ADD() {
     //  operand 2 RS1
     //  operand 3 RS2
     //  immediate value DC
-
     try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1] + data_regs[REG_VAL_2];
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in ADD" << endl;
         return false;
     }
 }
@@ -22,6 +22,12 @@ bool ADDI() {
     // operand 2 RS1
     // operand 3 DC
     // immediate value IMM
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }
 
 bool SUB() {
@@ -29,6 +35,12 @@ bool SUB() {
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }
 
 bool SUBI() {
@@ -36,6 +48,12 @@ bool SUBI() {
     // operand 2 RS1
     // operand 3 DC
     // immediate value IMM
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }
 
 bool MUL() {
@@ -43,6 +61,12 @@ bool MUL() {
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }
 
 bool MULI() {
@@ -50,6 +74,12 @@ bool MULI() {
     // operand 2 RS1
     // operand 3 DC
     // immediate value IMM
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }
 
 bool DIV() {
@@ -57,6 +87,12 @@ bool DIV() {
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }
 
 bool SDIV() {
@@ -64,6 +100,12 @@ bool SDIV() {
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }
 
 bool DIVI() {
@@ -71,4 +113,10 @@ bool DIVI() {
     // operand 2 RS1
     // operand 3 DC
     // immediate value IMM
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }

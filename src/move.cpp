@@ -84,9 +84,10 @@ bool LDR() {
 bool STB() {
     // store list significant byte in RS at address
     try {
+        prog_mem[cntrl_regs[IMMEDIATE]] = static_cast<unsigned char>(data_regs[REG_VAL_1]);
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in STB" << endl;
         return false;
     }
 }
@@ -97,9 +98,10 @@ bool STB() {
 // immediate value ADDRESS
 bool LDB() {
     try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1];
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in LDB" << endl;
         return false;
     }
 }

@@ -17,14 +17,26 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_BINARY_DIR}/lib)
 add_library(utils_objects OBJECT src/utils.cpp)
 target_include_directories(utils_objects PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+add_library(instruction_objects OBJECT
+    src/jump.cpp
+    src/move.cpp
+    src/arith.cpp
+    src/interrupt.cpp)
+target_include_directories(instruction_objects PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
 # ──────────────────────────────────────────────────────────────
 # Tools / executables
 # ──────────────────────────────────────────────────────────────
 add_executable(makebinary tools/makebinary.cpp  $<TARGET_OBJECTS:utils_objects>)
 target_include_directories(makebinary PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-add_executable(emu4380     src/main.cpp src/emu4380.cpp $<TARGET_OBJECTS:utils_objects>)
-target_include_directories(emu4380 PUBLIC ${PROJECT_SOURCE_DIR}/include)
+add_executable(emu4380     
+  src/main.cpp 
+  src/emu4380.cpp 
+  $<TARGET_OBJECTS:utils_objects>
+  $<TARGET_OBJECTS:instruction_objects>)
+
+  target_include_directories(emu4380 PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # ──────────────────────────────────────────────────────────────
 #  GoogleTest + GoogleMock (fetched once)
@@ -45,6 +57,7 @@ add_executable(runTests
     test/test.cpp
     src/emu4380.cpp
     $<TARGET_OBJECTS:utils_objects>
+    $<TARGET_OBJECTS:instruction_objects>
 )
 target_include_directories(runTests PUBLIC ${PROJECT_SOURCE_DIR}/include)
 

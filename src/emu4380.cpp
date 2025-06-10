@@ -38,12 +38,13 @@ bool fetch() {
 //-------------DECODE HELPER FUNCTIONS -------------
 
 // validates general purpose register
-bool is_general_rg(uint32_t r) {
-    return r >= PC && r <= HP;
+bool igr(uint32_t r) {
+    return is_valid_rg(r) && (r >= R0 && r < PC);
+    //  return r >= 16 && r <= 21
 }
 // validates if its a state register
 bool is_state_rg(uint32_t r) {
-    return r < 16;
+    return is_valid_rg(r) && (r < PC && r >= HP);
 }
 // validate any valid register
 bool is_valid_rg(uint32_t r) {
@@ -146,7 +147,7 @@ bool decode() {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t addr = cntrl_regs[IMMEDIATE];
 
-            if (!is_valid_rg(rd)) return false;
+            if (!is_state_rg(rd)) return false;
             if (addr + 4 > mem_size) return false;
 
             data_regs[REG_VAL_1] = (prog_mem[addr + 0]) | (prog_mem[addr + 1] << 8) | (prog_mem[addr + 2] << 16) | (prog_mem[addr + 3] << 24);
@@ -154,18 +155,56 @@ bool decode() {
         }
 
         case OP_STB: {
-            break;
+            // Store least significant byte in RS at address
+            // operand 1 RS
+            // operand 2 DC
+            // operand 3 DC
+            // immediate value ADDRESS
+            const uint32_t rs = cntrl_regs[OPERAND_1];
+
+            if (!is_state_rg(cntrl_regs[OPERAND_1])) return false;
+            if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs] & 0xFFu;
+            return true;
         }
 
         case OP_LDB: {
-            break;
+            // load byte at address to RD
+            // operand 1 RD
+            // operand 2 DC
+            // operand 3 DC
+            // immediate value ADDRESS
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+
+            if (!is_state_rg(rd)) return false;
+            if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
+
+            data_regs[REG_VAL_1] = prog_mem[cntrl_regs[IMMEDIATE]];
+            return true;
         }
 
         case OP_ADD: {
-            break;
+            // add rs1 to rs2, store result in RD
+            //  operand 1 RD
+            //  operand 2 RS1
+            //  operand 3 RS2
+            //  immediate value DC
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+            const uint32_t rs2 = cntrl_regs[OPERAND_3];
+
+            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+            if (cntrl_regs[IMMEDIATE] != 0) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+            data_regs[REG_VAL_2] = reg_file[rs2];
+
+            return true;
         }
 
         case OP_ADDI: {
+            // add imm to rs1, store result in RD
             break;
         }
 
@@ -218,7 +257,7 @@ bool execute() {
         case OP_MOV:
             return MOV();
         case OP_MOVI:
-            return MOV();
+            return MOVI();
         case OP_LDA:
             return LDA();
         case OP_STR:

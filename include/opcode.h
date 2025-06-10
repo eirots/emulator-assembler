@@ -5,6 +5,8 @@
 #define opcode_h_
 #include <cstdint>
 
+#include "arith.h"
+
 // enum definitions
 enum JumpOpcode : std::uint8_t {
     OP_JMP = 0x01
@@ -77,8 +79,6 @@ enum TrapOpcode : std::uint8_t {
         case OP_TRP:
             break;
     }
-
-
 */
 
 #endif
