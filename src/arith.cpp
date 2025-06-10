@@ -1,63 +1,72 @@
 #include "arith.h"
 
-void ADD() {
+#include <emu4380.h>
+
+bool ADD() {
     // add rs1 to rs2, store result in rd
     //  operand 1 RD
     //  operand 2 RS1
     //  operand 3 RS2
     //  immediate value DC
+
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
 }
 
-void ADDI() {
+bool ADDI() {
     // operand 1 RD
     // operand 2 RS1
     // operand 3 DC
     // immediate value IMM
 }
 
-void SUB() {
+bool SUB() {
     // operand 1 RD
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
 }
 
-void SUBI() {
+bool SUBI() {
     // operand 1 RD
     // operand 2 RS1
     // operand 3 DC
     // immediate value IMM
 }
 
-void MUL() {
+bool MUL() {
     // operand 1 RD
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
 }
 
-void MULI() {
+bool MULI() {
     // operand 1 RD
     // operand 2 RS1
     // operand 3 DC
     // immediate value IMM
 }
 
-void DIV() {
+bool DIV() {
     // operand 1 RD
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
 }
 
-void SDIV() {
+bool SDIV() {
     // operand 1 RD
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
 }
 
-void DIVI() {
+bool DIVI() {
     // operand 1 RD
     // operand 2 RS1
     // operand 3 DC

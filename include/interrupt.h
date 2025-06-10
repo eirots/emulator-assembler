@@ -5,6 +5,6 @@
  * @brief function for traps
  * @note based on immediate value
  */
-void TRP();
+bool TRP();
 
 #endif

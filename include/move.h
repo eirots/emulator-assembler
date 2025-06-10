@@ -6,48 +6,48 @@
  * @details
  * @return
  */
-void MOV();
+bool MOV();
 
 /**
  * @brief Move IMM value into RD
  * @details
  * @return
  */
-void MOVI();
+bool MOVI();
 
 /**
  * @brief Load address into RD
  * @details
  * @return
  */
-void LDA();
+bool LDA();
 
 /**
  * @brief Store integer in RS at address
  * @details
  * @return
  */
-void STR();
+bool STR();
 
 /**
  * @brief Load integer at Address to RD
  * @details
  * @return
  */
-void LDR();
+bool LDR();
 
 /**
  * @brief Store least significant byte in RS at address
  * @details
  * @return
  */
-void STB();
+bool STB();
 
 /**
  * @brief Load byte at Address to RD
  * @details
  * @return
  */
-void LDB();
+bool LDB();
 
 #endif

@@ -34,6 +34,7 @@ enum ArithOpcode : std::uint8_t {
 
 enum TrapOpcode : std::uint8_t {
     OP_TRP = 0x1F
+
 };
 
 /*

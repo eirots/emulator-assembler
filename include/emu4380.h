@@ -13,7 +13,7 @@ using namespace std;
 
 // Global variables
 extern uint32_t* reg_file;
-extern unsigned char* prog_mem;  // default size is 131_072 elements/bytes
+extern unsigned char* prog_mem;  // default size is 131,072 elements/bytes
 extern uint32_t cntrl_regs[5];   // stores instruction operation, register operands, and immediate value
 extern uint32_t data_regs[2];    // stores register operand values retrieved from register file
 extern uint32_t mem_size;

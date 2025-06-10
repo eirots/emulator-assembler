@@ -4,6 +4,6 @@
 /**
  * @brief Jump to address
  */
-void JMP();
+bool JMP();
 
 #endif

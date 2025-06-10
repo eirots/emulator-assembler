@@ -1,6 +1,6 @@
 #include "interrupt.h"
 
-void TRP() {
+bool TRP() {
     // IMM 0    -> EXECUTE STOP / EXIT ROUTINE
     // IMM 1    -> WRITE INT IN R3 TO STDOUT (CONSOLE)
     //      print the above without any leading or trailing whitespace

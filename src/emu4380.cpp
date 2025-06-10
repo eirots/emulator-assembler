@@ -12,6 +12,7 @@ unsigned char* prog_mem = nullptr;
 std::uint32_t cntrl_regs[5] = {};
 std::uint32_t data_regs[2] = {};
 std::uint32_t mem_size = 0;
+const uint32_t DEFAULT_MEMORY_SIZE = 131'072;  // default minimum size
 
 bool fetch() {
     constexpr size_t INSTR_SIZE = 8;
@@ -34,49 +35,32 @@ bool fetch() {
     return true;
 }
 
+//-------------DECODE HELPER FUNCTIONS -------------
+
+// validates general purpose register
+bool is_general_rg(uint32_t r) {
+    return r >= PC && r <= HP;
+}
+// validates if its a state register
+bool is_state_rg(uint32_t r) {
+    return r < 16;
+}
+// validate any valid register
+bool is_valid_rg(uint32_t r) {
+    return r < NUM_REGS;
+}
+
+// validate if an address is within memory
+bool is_valid_addr(uint32_t addr) {
+    return addr < mem_size;
+}
+
+//----------- END OF DECODE HELPER FUNCTIONS -----------
+
 bool decode() {
     // TODO:
 
     // verifies that the specified operation (or TRP) and operands as specified cntrl_regs are valid
-
-    switch (cntrl_regs[OPERATION]) {
-        case OP_JMP:
-            break;
-        case OP_MOV:
-            break;
-        case OP_MOVI:
-            break;
-        case OP_LDA:
-            break;
-        case OP_STR:
-            break;
-        case OP_LDR:
-            break;
-        case OP_STB:
-            break;
-        case OP_LDB:
-            break;
-        case OP_ADD:
-            break;
-        case OP_ADDI:
-            break;
-        case OP_SUB:
-            break;
-        case OP_SUBI:
-            break;
-        case OP_MUL:
-            break;
-        case OP_MULI:
-            break;
-        case OP_DIV:
-            break;
-        case OP_SDIV:
-            break;
-        case OP_DIVI:
-            break;
-        case OP_TRP:
-            break;
-    }
 
     // ex, MOV operates on state registers, and there are a limited number of these. A MOV with an RD value of 55 would be a
     //      malformed instruction.
@@ -87,7 +71,137 @@ bool decode() {
     // NOTE: Immediate value instructions shall result in immediate value operands being placed in CNTRL_REGS during fetch stage
     //       Values shall remain in cntrl_regs where they are sourced during execute phase, vs being placed in data_regs
 
-    // Valid i
+    switch (cntrl_regs[OPERATION]) {
+        case OP_JMP: {
+            //  operand 1         DC
+            //  operand 2         DC
+            //  operand 3         DC
+            //  immediate value   Address
+            if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;  // malformed instruction
+
+            return true;
+        }
+
+        case OP_MOV: {
+            // operand 1 RD
+            // operand 2 RS
+            // operand 3 DC
+            // immediate value DC
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs = cntrl_regs[OPERAND_2];
+
+            if (!is_state_rg(rd)) return false;
+            if (!is_valid_rg(rs)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs];
+            return true;
+        }
+
+        case OP_MOVI: {
+            // operand 1 RD
+            // operand 2 DC
+            // operand 3 DC
+            // immediate value IMM
+
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+
+            if (!is_state_rg(rd)) return false;
+
+            return true;
+        }
+
+        case OP_LDA: {
+            // operand 1 RD
+            // operand 2 DC
+            // operand 3 DC
+            // immediate value IMM
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+
+            if (!is_state_rg(rd)) return false;
+            if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
+            return true;
+        }
+
+        case OP_STR: {
+            // operand 1 RS
+            // operand 2 DC
+            // operand 3 DC
+            // immediate value ADDRESS
+            // store integer in RS at address
+            const uint32_t rs = cntrl_regs[OPERAND_1];
+
+            if (!is_valid_rg(rs)) return false;
+            if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs];
+            return true;
+        }
+
+        case OP_LDR: {
+            // load integer at address to RD
+            // operand 1 RS
+            // operand 2 DC
+            // operand 3 DC
+            // immediate value ADDRESS
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t addr = cntrl_regs[IMMEDIATE];
+
+            if (!is_valid_rg(rd)) return false;
+            if (addr + 4 > mem_size) return false;
+
+            data_regs[REG_VAL_1] = (prog_mem[addr + 0]) | (prog_mem[addr + 1] << 8) | (prog_mem[addr + 2] << 16) | (prog_mem[addr + 3] << 24);
+            return true;
+        }
+
+        case OP_STB: {
+            break;
+        }
+
+        case OP_LDB: {
+            break;
+        }
+
+        case OP_ADD: {
+            break;
+        }
+
+        case OP_ADDI: {
+            break;
+        }
+
+        case OP_SUB: {
+            break;
+        }
+
+        case OP_SUBI: {
+            break;
+        }
+
+        case OP_MUL: {
+            break;
+        }
+
+        case OP_MULI: {
+            break;
+        }
+
+        case OP_DIV: {
+            break;
+        }
+
+        case OP_SDIV: {
+            break;
+        }
+
+        case OP_DIVI: {
+            break;
+        }
+
+        case OP_TRP: {
+            break;
+        }
+    }
+
     return false;
 }
 
@@ -98,7 +212,46 @@ bool execute() {
     // indicated by cntrl_regs and data_regs, and in accordance with instruction or TRP's specification
 
     // returns FALSE if illegal operation is encountered (does not execute instruction), otherwise TRUE
-    return false;
+    switch (cntrl_regs[OPERATION]) {
+        case OP_JMP:
+            return JMP();
+        case OP_MOV:
+            return MOV();
+        case OP_MOVI:
+            return MOV();
+        case OP_LDA:
+            return LDA();
+        case OP_STR:
+            return STR();
+        case OP_LDR:
+            return LDR();
+        case OP_STB:
+            return STB();
+        case OP_LDB:
+            return LDB();
+        case OP_ADD:
+            return ADD();
+        case OP_ADDI:
+            return ADDI();
+        case OP_SUB:
+            return SUB();
+        case OP_SUBI:
+            return SUBI();
+        case OP_MUL:
+            return MUL();
+        case OP_MULI:
+            return MULI();
+        case OP_DIV:
+            return DIV();
+        case OP_SDIV:
+            return SDIV();
+        case OP_DIVI:
+            return DIVI();
+        case OP_TRP:
+            return TRP();
+    }
+
+    return false;  // catch in case something went horribly wrong
 }
 
 bool init_registers() {
@@ -168,8 +321,7 @@ int runEmulator(int argc, char** argv) {
     mem_size;
 
     if (argc < 3) {
-        // default minimum size
-        mem_size = 131'072;
+        mem_size = DEFAULT_MEMORY_SIZE;
 
         // cout << "memsize defaulted to: " << mem_size << endl;
     } else {
