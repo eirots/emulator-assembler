@@ -1,12 +1,5 @@
 #include "emu4380.h"
 
-#include "arith.h"
-#include "interrupt.h"
-#include "jump.h"
-#include "move.h"
-#include "opcode.h"
-#include "utils.h"
-
 std::uint32_t* reg_file = nullptr;
 unsigned char* prog_mem = nullptr;
 std::uint32_t cntrl_regs[5] = {};
@@ -37,6 +30,11 @@ bool fetch() {
 
 //-------------DECODE HELPER FUNCTIONS -------------
 
+// validate any valid register
+bool is_valid_rg(uint32_t r) {
+    return r < NUM_REGS;
+}
+
 // validates general purpose register
 bool igr(uint32_t r) {
     return is_valid_rg(r) && (r >= R0 && r < PC);
@@ -45,10 +43,6 @@ bool igr(uint32_t r) {
 // validates if its a state register
 bool is_state_rg(uint32_t r) {
     return is_valid_rg(r) && (r < PC && r >= HP);
-}
-// validate any valid register
-bool is_valid_rg(uint32_t r) {
-    return r < NUM_REGS;
 }
 
 // validate if an address is within memory
@@ -198,13 +192,17 @@ bool decode() {
             if (cntrl_regs[IMMEDIATE] != 0) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
-            data_regs[REG_VAL_2] = reg_file[rs2];
+            data_regs[REG_VAL_1] = reg_file[rs2];
 
             return true;
         }
 
         case OP_ADDI: {
             // add imm to rs1, store result in RD
+            // operand 1 RD
+            // operand 2 RS1
+            // operand 3 DC
+            // immediate value IMM
             break;
         }
 
@@ -394,4 +392,263 @@ int runEmulator(int argc, char** argv) {
     }
 
     return 0;
+}
+
+// operation execution functions
+bool JMP() {
+    try {
+        reg_file[PC] = cntrl_regs[IMMEDIATE];
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in JMP" << endl;
+        return false;
+    }
+}
+
+// move execution functions
+
+// operand 1 RD
+// operand 2 RS
+// operand 3 DC
+// immediate value DC
+bool MOV() {
+    try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1];
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in MOV" << endl;
+        return false;
+    }
+}
+
+// operand 1 RD
+// operand 2 DC
+// operand 3 DC
+// immediate value IMM
+bool MOVI() {
+    try {
+        reg_file[cntrl_regs[OPERAND_1]] = cntrl_regs[IMMEDIATE];
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in MOVI" << endl;
+        return false;
+    }
+}
+
+// operand 1 RD
+// operand 2 DC
+// operand 3 DC
+// immediate value IMM
+bool LDA() {
+    try {
+        reg_file[cntrl_regs[OPERAND_1]] = cntrl_regs[IMMEDIATE];
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in LDA" << endl;
+        return false;
+    }
+}
+
+// operand 1 RS
+// operand 2 DC
+// operand 3 DC
+// immediate value ADDRESS
+bool STR() {
+    try {
+        uint32_t addr = cntrl_regs[IMMEDIATE];
+        uint32_t val = data_regs[REG_VAL_1];
+
+        for (int i = 0; i < 4; i++) {
+            prog_mem[addr + i] = (val >> (i * 8)) & 0xFF;
+        }
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in STR" << endl;
+        return false;
+    }
+}
+
+// operand 1 RD
+// operand 2 DC
+// operand 3 DC
+// immediate value ADDRESS
+bool LDR() {
+    try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1];
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in LDR" << endl;
+        return false;
+    }
+}
+
+// operand 1 RS
+// operand 2 DC
+// operand 3 DC
+// immediate value ADDRESS
+bool STB() {
+    // store list significant byte in RS at address
+    try {
+        prog_mem[cntrl_regs[IMMEDIATE]] = static_cast<unsigned char>(data_regs[REG_VAL_1]);
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in STB" << endl;
+        return false;
+    }
+}
+
+// operand 1 RD
+// operand 2 DC
+// operand 3 DC
+// immediate value ADDRESS
+bool LDB() {
+    try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1];
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in LDB" << endl;
+        return false;
+    }
+}
+
+// arithmetic execution functions
+
+bool ADD() {
+    // add rs1 to rs2, store result in rd
+    //  operand 1 RD
+    //  operand 2 RS1
+    //  operand 3 RS2
+    //  immediate value DC
+    try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1] + data_regs[REG_VAL_2];
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in ADD" << endl;
+        return false;
+    }
+}
+
+bool ADDI() {
+    // operand 1 RD
+    // operand 2 RS1
+    // operand 3 DC
+    // immediate value IMM
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in ADDI" << endl;
+        return false;
+    }
+}
+
+bool SUB() {
+    // operand 1 RD
+    // operand 2 RS1
+    // operand 3 RS2
+    // immediate value DC
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
+}
+
+bool SUBI() {
+    // operand 1 RD
+    // operand 2 RS1
+    // operand 3 DC
+    // immediate value IMM
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
+}
+
+bool MUL() {
+    // operand 1 RD
+    // operand 2 RS1
+    // operand 3 RS2
+    // immediate value DC
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
+}
+
+bool MULI() {
+    // operand 1 RD
+    // operand 2 RS1
+    // operand 3 DC
+    // immediate value IMM
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
+}
+
+bool DIV() {
+    // operand 1 RD
+    // operand 2 RS1
+    // operand 3 RS2
+    // immediate value DC
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
+}
+
+bool SDIV() {
+    // operand 1 RD
+    // operand 2 RS1
+    // operand 3 RS2
+    // immediate value DC
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
+}
+
+bool DIVI() {
+    // operand 1 RD
+    // operand 2 RS1
+    // operand 3 DC
+    // immediate value IMM
+    try {
+        return true;
+    } catch (const exception&) {
+        cerr << "Error in " << endl;
+        return false;
+    }
+}
+
+// trap/interrupt functions
+
+bool TRP() {
+    // IMM 0    -> EXECUTE STOP / EXIT ROUTINE
+    // IMM 1    -> WRITE INT IN R3 TO STDOUT (CONSOLE)
+    //      print the above without any leading or trailing whitespace
+    // IMM 2    -> READ AN INTEGER INTO R3 FROM STDIN
+    // IMM 3    -> WRITE CHAR IN R3 TO STDOUT
+    //      print the above without any leading or trailing whitespace
+    // IMM 4    -> READ A CHAR INTO R3 FROM STDIN
+    // IMM 98   -> PRINT ALL REGISTER CONTENTS TO STDOUT
+    //      format above as follows:
+    //          -one register name and value per line
+    //          -The register name shall be in all caps, followed by a tab character, followed by the register value printed as unsigned base 10 integer
+    //          -example:
+    //              -R1 0
+    //              -R2 128
+    //              -R3 34
+    //              -HP 10045
 }

@@ -53,6 +53,37 @@ enum DataRegNames { REG_VAL_1 = 0,
                     REG_VAL_2 = 1
 };
 
+enum JumpOpcode : std::uint8_t {
+    OP_JMP = 0x01
+};
+
+enum MoveOpcode : std::uint8_t {
+    OP_MOV = 0x07,   // 7
+    OP_MOVI = 0x08,  // 8
+    OP_LDA = 0x09,   // 9
+    OP_STR = 0x0A,   // 10
+    OP_LDR = 0x0B,   // 11
+    OP_STB = 0x0C,   // 12
+    OP_LDB = 0x0D    // 13
+};
+
+enum ArithOpcode : std::uint8_t {
+    OP_ADD = 0x12,   // 18
+    OP_ADDI = 0x13,  // 19
+    OP_SUB = 0x14,   // 20
+    OP_SUBI = 0x15,  // 21
+    OP_MUL = 0x16,   // 22
+    OP_MULI = 0x17,  // 23
+    OP_DIV = 0x18,   // 24
+    OP_SDIV = 0x19,  // 25
+    OP_DIVI = 0x1A   // 26
+};
+
+enum TrapOpcode : std::uint8_t {
+    OP_TRP = 0x1F
+
+};
+
 // function prototypes
 /**
  * @brief Retrieves the bytes for the next instruction, and places them in the appropriate cntrl_regs
@@ -91,5 +122,127 @@ bool init_mem(unsigned int size);
  * @return ints that you would expect from a main.
  */
 int runEmulator(int argc, char** argv);
+
+//------------START OF OPERATION FUNCTIONS------------
+
+// jump instructions
+
+/**
+ * @brief Jump to address
+ */
+bool JMP();
+
+// move instructions
+
+/**
+ * @brief Move contents of RS to RD
+ * @details
+ * @return
+ */
+bool MOV();
+
+/**
+ * @brief Move IMM value into RD
+ * @details
+ * @return
+ */
+bool MOVI();
+
+/**
+ * @brief Load address into RD
+ * @details
+ * @return
+ */
+bool LDA();
+
+/**
+ * @brief Store integer in RS at address
+ * @details
+ * @return
+ */
+bool STR();
+
+/**
+ * @brief Load integer at Address to RD
+ * @details
+ * @return
+ */
+bool LDR();
+
+/**
+ * @brief Store least significant byte in RS at address
+ * @details
+ * @return
+ */
+bool STB();
+
+/**
+ * @brief Load byte at Address to RD
+ * @details
+ * @return
+ */
+bool LDB();
+
+// arithmetic functions
+/**
+ * @brief Add RS1 to RS2, store result in RD
+ * @details
+ */
+bool ADD();
+
+/**
+ * @brief Add Imm to RS1, store result in RD
+ * @details
+ */
+bool ADDI();
+
+/**
+ * @brief Subtract RS2 from RS1, store result in RD
+ * @details
+ */
+bool SUB();
+
+/**
+ * @brief Subtract Imm* from RS1, store result in RD
+ * @details
+ */
+bool SUBI();
+
+/**
+ * @brief Multiply RS1 by RS2, store result in RD
+ * @details
+ */
+bool MUL();
+
+/**
+ * @brief Multiply RS1 by IMM, store the result in RD
+ * @details
+ */
+bool MULI();
+
+/**
+ * @brief Perform unsigned integer division RS1 / RS2. Store quotient in RD
+ * @details Division by zero shall result in an emulator error
+ */
+bool DIV();
+
+/**
+ * @brief Store result of signed division RS1 / RS2 in RD.
+ * @detailsDivision by zero shall result in an emulator error
+ */
+bool SDIV();
+
+/**
+ * @brief Divide RS1 by IMM (signed), store the result in RD.
+ * @details Division by zero shall result in an emulator error
+ */
+bool DIVI();
+
+// trap/interrupt functions
+/**
+ * @brief function for traps
+ * @note based on immediate value
+ */
+bool TRP();
 
 #endif
