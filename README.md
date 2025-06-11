@@ -23,9 +23,8 @@ TODO:
 |6/7/25 | 3 hours | Realized I had made a mistake in fetch and corrected it, added comments for what to do with instructions. Started working on decode.| 
 |6/9/25 | 2 hours | Worked on mov.cpp and decode. Started implementing execute functions, realized I made a mistake in function signatures. Things are broken right now (linker issues, need to add things to cmakelists), but I will fix it all tomorrow. | 
 | 6/10/25 | 1.5 hours | Finished up move operations, started on arithmatic ones.  | 
+| 6/11/25 | 3 hours | Moved away from operations being in files, moved everything into emu4380 header and cpp file. Added arith operations| 
 ## Questions: 
-Are structs ok / encouraged? 
+
 
 ## Validation
-### Part 1:
-TODO: 

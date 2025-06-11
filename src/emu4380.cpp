@@ -189,10 +189,9 @@ bool decode() {
             const uint32_t rs2 = cntrl_regs[OPERAND_3];
 
             if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
-            if (cntrl_regs[IMMEDIATE] != 0) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
-            data_regs[REG_VAL_1] = reg_file[rs2];
+            data_regs[REG_VAL_2] = reg_file[rs2];
 
             return true;
         }
@@ -203,35 +202,104 @@ bool decode() {
             // operand 2 RS1
             // operand 3 DC
             // immediate value IMM
-            break;
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+
+            if (!is_state_rg(rd) | !igr(rs1)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+
+            return true;
         }
 
         case OP_SUB: {
-            break;
+            // Subtract RS2 from RS1, store result in RD
+            // operand 1 RD
+            // operand 2 RS1
+            // operand 3 RS2
+            // immediate value DC
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+            const uint32_t rs2 = cntrl_regs[OPERAND_3];
+
+            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+            data_regs[REG_VAL_2] = reg_file[rs2];
+
+            return true;
         }
 
         case OP_SUBI: {
-            break;
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+
+            if (!is_state_rg(rd) | !igr(rs1)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+
+            return true;
         }
 
         case OP_MUL: {
-            break;
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+            const uint32_t rs2 = cntrl_regs[OPERAND_3];
+
+            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+            data_regs[REG_VAL_2] = reg_file[rs2];
+
+            return true;
         }
 
         case OP_MULI: {
-            break;
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+
+            if (!is_state_rg(rd) | !igr(rs1)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+
+            return true;
         }
 
         case OP_DIV: {
-            break;
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+            const uint32_t rs2 = cntrl_regs[OPERAND_3];
+
+            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+            data_regs[REG_VAL_2] = reg_file[rs2];
+
+            return true;
         }
 
         case OP_SDIV: {
-            break;
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+            const uint32_t rs2 = cntrl_regs[OPERAND_3];
+
+            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+            data_regs[REG_VAL_2] = reg_file[rs2];
+
+            return true;
         }
 
         case OP_DIVI: {
-            break;
+            const uint32_t rd = cntrl_regs[OPERAND_1];
+            const uint32_t rs1 = cntrl_regs[OPERAND_2];
+
+            if (!is_state_rg(rd) | !igr(rs1)) return false;
+
+            data_regs[REG_VAL_1] = reg_file[rs1];
+
+            return true;
         }
 
         case OP_TRP: {
@@ -243,8 +311,6 @@ bool decode() {
 }
 
 bool execute() {
-    // TODO:
-
     // Executes the effects of decoded and validated instruction or TRP on the state members (regs, memory, etc.) as
     // indicated by cntrl_regs and data_regs, and in accordance with instruction or TRP's specification
 
@@ -534,6 +600,7 @@ bool ADDI() {
     // operand 3 DC
     // immediate value IMM
     try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1] + cntrl_regs[IMMEDIATE];
         return true;
     } catch (const exception&) {
         cerr << "Error in ADDI" << endl;
@@ -547,9 +614,10 @@ bool SUB() {
     // operand 3 RS2
     // immediate value DC
     try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1] - data_regs[REG_VAL_2];
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in SUB" << endl;
         return false;
     }
 }
@@ -560,9 +628,10 @@ bool SUBI() {
     // operand 3 DC
     // immediate value IMM
     try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1] - cntrl_regs[IMMEDIATE];
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in SUBI" << endl;
         return false;
     }
 }
@@ -573,9 +642,10 @@ bool MUL() {
     // operand 3 RS2
     // immediate value DC
     try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1] * data_regs[REG_VAL_2];
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in MUL" << endl;
         return false;
     }
 }
@@ -586,9 +656,10 @@ bool MULI() {
     // operand 3 DC
     // immediate value IMM
     try {
+        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1] * cntrl_regs[IMMEDIATE];
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in MULI" << endl;
         return false;
     }
 }
@@ -599,9 +670,11 @@ bool DIV() {
     // operand 3 RS2
     // immediate value DC
     try {
+        if (data_regs[REG_VAL_2] == 0) return false;
+        reg_file[cntrl_regs[OPERAND_1]] = static_cast<unsigned int>(data_regs[REG_VAL_1]) / static_cast<unsigned int>(data_regs[REG_VAL_2]);
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in DIV" << endl;
         return false;
     }
 }
@@ -612,9 +685,11 @@ bool SDIV() {
     // operand 3 RS2
     // immediate value DC
     try {
+        if (data_regs[REG_VAL_2] == 0) return false;
+        reg_file[cntrl_regs[OPERAND_1]] = static_cast<uint32_t>(static_cast<int32_t>(data_regs[REG_VAL_1]) / static_cast<int32_t>(data_regs[REG_VAL_2]));
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in SDIV" << endl;
         return false;
     }
 }
@@ -625,9 +700,11 @@ bool DIVI() {
     // operand 3 DC
     // immediate value IMM
     try {
+        if (cntrl_regs[IMMEDIATE] == 0) return false;
+        reg_file[cntrl_regs[OPERAND_1]] = static_cast<uint32_t>(static_cast<int32_t>(data_regs[REG_VAL_1]) / static_cast<int32_t>(cntrl_regs[IMMEDIATE]));
         return true;
     } catch (const exception&) {
-        cerr << "Error in " << endl;
+        cerr << "Error in DIVI" << endl;
         return false;
     }
 }

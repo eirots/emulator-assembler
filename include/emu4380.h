@@ -20,37 +20,42 @@ extern uint32_t mem_size;
 constexpr size_t NUM_REGS = 22;
 
 // enums
-enum RegNames : std::size_t { R0 = 0,  // general purpose registers
-                              R1 = 1,
-                              R2 = 2,
-                              R3 = 3,
-                              R4 = 4,
-                              R5 = 5,
-                              R6 = 6,
-                              R7 = 7,
-                              R8 = 8,
-                              R9 = 9,
-                              R10 = 10,
-                              R11 = 11,
-                              R12 = 12,
-                              R13 = 13,
-                              R14 = 14,
-                              R15 = 15,
-                              PC = 16,  // program counter, initialized to the address of first instruction in memory
-                              SL = 17,  // stack lower limit (lowest legal address available to stack)
-                              SB = 18,  // stack bottom (highest address)
-                              SP = 19,  // stack pointer (latest allocated byte on the stack, grows downward)
-                              FP = 20,  // frame pointer (points to first word beneath return address)
-                              HP = 21   // heap pointer (initially set to SL, grows upwards)
+enum RegNames : std::size_t {
+    R0 = 0,  // general purpose registers
+    R1 = 1,
+    R2 = 2,
+    R3 = 3,
+    R4 = 4,
+    R5 = 5,
+    R6 = 6,
+    R7 = 7,
+    R8 = 8,
+    R9 = 9,
+    R10 = 10,
+    R11 = 11,
+    R12 = 12,
+    R13 = 13,
+    R14 = 14,
+    R15 = 15,
+    PC = 16,  // program counter, initialized to the address of first instruction in memory
+    SL = 17,  // stack lower limit (lowest legal address available to stack)
+    SB = 18,  // stack bottom (highest address)
+    SP = 19,  // stack pointer (latest allocated byte on the stack, grows downward)
+    FP = 20,  // frame pointer (points to first word beneath return address)
+    HP = 21   // heap pointer (initially set to SL, grows upwards)
 };
-enum CntrlRegNames { OPERATION = 0,  // opcode
-                     OPERAND_1 = 1,
-                     OPERAND_2 = 2,
-                     OPERAND_3 = 3,
-                     IMMEDIATE = 4
+
+enum CntrlRegNames {
+    OPERATION = 0,  // opcode
+    OPERAND_1 = 1,
+    OPERAND_2 = 2,
+    OPERAND_3 = 3,
+    IMMEDIATE = 4
 };
-enum DataRegNames { REG_VAL_1 = 0,
-                    REG_VAL_2 = 1
+
+enum DataRegNames {
+    REG_VAL_1 = 0,
+    REG_VAL_2 = 1
 };
 
 enum JumpOpcode : std::uint8_t {
@@ -203,7 +208,7 @@ bool ADDI();
 bool SUB();
 
 /**
- * @brief Subtract Imm* from RS1, store result in RD
+ * @brief Subtract Imm from RS1, store result in RD
  * @details
  */
 bool SUBI();
