@@ -1,19 +1,52 @@
 #include "emu4380.h"
 
+#include <iostream>
+
 std::uint32_t* reg_file = nullptr;
+
 unsigned char* prog_mem = nullptr;
+
 std::uint32_t cntrl_regs[5] = {};
 std::uint32_t data_regs[2] = {};
 std::uint32_t mem_size = 0;
+
+constexpr size_t NUM_REGS = 22;
+
 const uint32_t DEFAULT_MEMORY_SIZE = 131'072;  // default minimum size
+
+bool runBool = true;
+
+constexpr const char* REG_NAMES[NUM_REGS] = {
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R12",
+    "R13",
+    "R14",
+    "R15",
+    "PC",
+    "SL",
+    "SB",
+    "SP",
+    "FP",
+    "HP"};
 
 bool fetch() {
     constexpr size_t INSTR_SIZE = 8;
 
     if (reg_file[PC] + INSTR_SIZE > mem_size) return false;  // about to run out of memory
 
-    cntrl_regs[OPERATION] = prog_mem[reg_file[PC]++];
-    cntrl_regs[OPERAND_1] = prog_mem[reg_file[PC]++];
+    cntrl_regs[OPERATION] = prog_mem[reg_file[PC]++];  // unrolled, should run faster in theory. will make future compiler
+    cntrl_regs[OPERAND_1] = prog_mem[reg_file[PC]++];  //       shenannigans easier
     cntrl_regs[OPERAND_2] = prog_mem[reg_file[PC]++];
     cntrl_regs[OPERAND_3] = prog_mem[reg_file[PC]++];
 
@@ -42,7 +75,7 @@ bool igr(uint32_t r) {
 }
 // validates if its a state register
 bool is_state_rg(uint32_t r) {
-    return is_valid_rg(r) && (r < PC && r >= HP);
+    return is_valid_rg(r) && (r >= PC && r <= HP);
 }
 
 // validate if an address is within memory
@@ -53,8 +86,6 @@ bool is_valid_addr(uint32_t addr) {
 //----------- END OF DECODE HELPER FUNCTIONS -----------
 
 bool decode() {
-    // TODO:
-
     // verifies that the specified operation (or TRP) and operands as specified cntrl_regs are valid
 
     // ex, MOV operates on state registers, and there are a limited number of these. A MOV with an RD value of 55 would be a
@@ -85,7 +116,7 @@ bool decode() {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t rs = cntrl_regs[OPERAND_2];
 
-            if (!is_state_rg(rd)) return false;
+            if (!is_valid_rg(rd)) return false;
             if (!is_valid_rg(rs)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs];
@@ -100,7 +131,7 @@ bool decode() {
 
             const uint32_t rd = cntrl_regs[OPERAND_1];
 
-            if (!is_state_rg(rd)) return false;
+            if (!is_valid_rg(rd)) return false;
 
             return true;
         }
@@ -112,7 +143,7 @@ bool decode() {
             // immediate value IMM
             const uint32_t rd = cntrl_regs[OPERAND_1];
 
-            if (!is_state_rg(rd)) return false;
+            if (!is_valid_rg(rd)) return false;
             if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
             return true;
         }
@@ -141,7 +172,7 @@ bool decode() {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t addr = cntrl_regs[IMMEDIATE];
 
-            if (!is_state_rg(rd)) return false;
+            if (!is_valid_rg(rd)) return false;
             if (addr + 4 > mem_size) return false;
 
             data_regs[REG_VAL_1] = (prog_mem[addr + 0]) | (prog_mem[addr + 1] << 8) | (prog_mem[addr + 2] << 16) | (prog_mem[addr + 3] << 24);
@@ -156,7 +187,7 @@ bool decode() {
             // immediate value ADDRESS
             const uint32_t rs = cntrl_regs[OPERAND_1];
 
-            if (!is_state_rg(cntrl_regs[OPERAND_1])) return false;
+            if (!is_valid_rg(cntrl_regs[OPERAND_1])) return false;
             if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs] & 0xFFu;
@@ -171,7 +202,7 @@ bool decode() {
             // immediate value ADDRESS
             const uint32_t rd = cntrl_regs[OPERAND_1];
 
-            if (!is_state_rg(rd)) return false;
+            if (!is_valid_rg(rd)) return false;
             if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
 
             data_regs[REG_VAL_1] = prog_mem[cntrl_regs[IMMEDIATE]];
@@ -188,7 +219,7 @@ bool decode() {
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
             const uint32_t rs2 = cntrl_regs[OPERAND_3];
 
-            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+            if (!igr(rd) || !igr(rs1) || !igr(rs2)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
             data_regs[REG_VAL_2] = reg_file[rs2];
@@ -205,7 +236,7 @@ bool decode() {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
 
-            if (!is_state_rg(rd) | !igr(rs1)) return false;
+            if (!igr(rd) || !igr(rs1)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
 
@@ -222,7 +253,7 @@ bool decode() {
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
             const uint32_t rs2 = cntrl_regs[OPERAND_3];
 
-            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+            if (!igr(rd) || !igr(rs1) || !igr(rs2)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
             data_regs[REG_VAL_2] = reg_file[rs2];
@@ -234,7 +265,7 @@ bool decode() {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
 
-            if (!is_state_rg(rd) | !igr(rs1)) return false;
+            if (!igr(rd) || !igr(rs1)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
 
@@ -246,7 +277,7 @@ bool decode() {
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
             const uint32_t rs2 = cntrl_regs[OPERAND_3];
 
-            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+            if (!igr(rd) || !igr(rs1) || !igr(rs2)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
             data_regs[REG_VAL_2] = reg_file[rs2];
@@ -258,7 +289,7 @@ bool decode() {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
 
-            if (!is_state_rg(rd) | !igr(rs1)) return false;
+            if (!igr(rd) || !igr(rs1)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
 
@@ -270,7 +301,7 @@ bool decode() {
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
             const uint32_t rs2 = cntrl_regs[OPERAND_3];
 
-            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+            if (!igr(rd) || !igr(rs1) || !igr(rs2)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
             data_regs[REG_VAL_2] = reg_file[rs2];
@@ -283,7 +314,7 @@ bool decode() {
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
             const uint32_t rs2 = cntrl_regs[OPERAND_3];
 
-            if (!is_state_rg(rd) || !igr(rs1) || !igr(rs2)) return false;
+            if (!igr(rd) || !igr(rs1) || !igr(rs2)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
             data_regs[REG_VAL_2] = reg_file[rs2];
@@ -295,7 +326,7 @@ bool decode() {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
 
-            if (!is_state_rg(rd) | !igr(rs1)) return false;
+            if (!igr(rd) || !igr(rs1)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs1];
 
@@ -303,7 +334,13 @@ bool decode() {
         }
 
         case OP_TRP: {
-            break;
+            // valid values are 0-4 unsigned ints, and 98
+            uint32_t imm = cntrl_regs[IMMEDIATE];
+
+            if (imm <= 4 || imm == 98)
+                return true;
+            else
+                return false;
         }
     }
 
@@ -421,7 +458,6 @@ int runEmulator(int argc, char** argv) {
         cout << "RESERVED_MEMORY (optional):\tPositive integer, default 131,072 bytes, max 4,294,967,295\n";
         return 1;
     }
-    mem_size;
 
     if (argc < 3) {
         mem_size = DEFAULT_MEMORY_SIZE;
@@ -456,6 +492,21 @@ int runEmulator(int argc, char** argv) {
         cerr << "INSUFFICIENT MEMORY SPACE \n";
         return 2;
     }
+
+    /*    while (runBool) {
+            if (!fetch()) {
+                invalidInstruction();
+                return 1;
+            }
+            if (!decode()) {
+                invalidInstruction();
+                return 1;
+            }
+            if (!execute()) {
+                invalidInstruction();
+                return 1;
+            }
+        } */
 
     return 0;
 }
@@ -669,14 +720,13 @@ bool DIV() {
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
-    try {
-        if (data_regs[REG_VAL_2] == 0) return false;
-        reg_file[cntrl_regs[OPERAND_1]] = static_cast<unsigned int>(data_regs[REG_VAL_1]) / static_cast<unsigned int>(data_regs[REG_VAL_2]);
-        return true;
-    } catch (const exception&) {
-        cerr << "Error in DIV" << endl;
-        return false;
-    }
+    uint32_t dividend = data_regs[REG_VAL_1];
+    uint32_t divisor = data_regs[REG_VAL_2];
+
+    if (divisor == 0) return false;  // illegal, cannot divide by zero.
+
+    reg_file[cntrl_regs[OPERAND_1]] = dividend / divisor;  // unsigned division
+    return true;
 }
 
 bool SDIV() {
@@ -684,14 +734,13 @@ bool SDIV() {
     // operand 2 RS1
     // operand 3 RS2
     // immediate value DC
-    try {
-        if (data_regs[REG_VAL_2] == 0) return false;
-        reg_file[cntrl_regs[OPERAND_1]] = static_cast<uint32_t>(static_cast<int32_t>(data_regs[REG_VAL_1]) / static_cast<int32_t>(data_regs[REG_VAL_2]));
-        return true;
-    } catch (const exception&) {
-        cerr << "Error in SDIV" << endl;
-        return false;
-    }
+    int32_t dividend = static_cast<int32_t>(data_regs[REG_VAL_1]);
+    int32_t divisor = static_cast<int32_t>(data_regs[REG_VAL_2]);
+
+    if (divisor == 0) return false;  // illegal, cannot divide by zero
+
+    reg_file[cntrl_regs[OPERAND_1]] = static_cast<uint32_t>(dividend / divisor);  // signed divison
+    return true;
 }
 
 bool DIVI() {
@@ -699,20 +748,20 @@ bool DIVI() {
     // operand 2 RS1
     // operand 3 DC
     // immediate value IMM
-    try {
-        if (cntrl_regs[IMMEDIATE] == 0) return false;
-        reg_file[cntrl_regs[OPERAND_1]] = static_cast<uint32_t>(static_cast<int32_t>(data_regs[REG_VAL_1]) / static_cast<int32_t>(cntrl_regs[IMMEDIATE]));
-        return true;
-    } catch (const exception&) {
-        cerr << "Error in DIVI" << endl;
-        return false;
-    }
+    // signed immediate divison
+    int32_t dividend = static_cast<int32_t>(data_regs[REG_VAL_1]);
+    int32_t divisor = static_cast<int32_t>(cntrl_regs[IMMEDIATE]);
+
+    if (divisor == 0) return false;  // illegal, cannot divide by zero
+
+    reg_file[cntrl_regs[OPERAND_1]] = static_cast<uint32_t>(dividend / divisor);
+
+    return true;
 }
 
 // trap/interrupt functions
 
 bool TRP() {
-    // IMM 0    -> EXECUTE STOP / EXIT ROUTINE
     // IMM 1    -> WRITE INT IN R3 TO STDOUT (CONSOLE)
     //      print the above without any leading or trailing whitespace
     // IMM 2    -> READ AN INTEGER INTO R3 FROM STDIN
@@ -728,4 +777,72 @@ bool TRP() {
     //              -R2 128
     //              -R3 34
     //              -HP 10045
+    uint32_t imm = cntrl_regs[IMMEDIATE];
+
+    switch (imm) {
+        case 0: {
+            runBool = false;
+            return true;
+        }
+        // write int in r3 to stdout (console)
+        case 1: {
+            std::cout << static_cast<uint32_t>(reg_file[R3]) << std::flush;  // flush the buffer to make sure that it writes. cast to make sure that its an int going out
+            return true;
+        }
+        // read an integer into R3 from stdin
+        case 2: {
+            uint32_t inInt;
+            if (!(std::cin >> inInt)) return false;       // fails if it wasnt able to get anything from cin
+            reg_file[R3] = static_cast<uint32_t>(inInt);  // casts to unsigned int
+            return true;
+        }
+        // write char in R3 to stdout
+        case 3: {
+            cout << static_cast<char>(reg_file[R3]) << std::flush;  // cast to make sure a char gets out there, flush to make sure that buffer goes out
+            return true;
+        }
+        // read a char into R3 from stdin
+        case 4: {
+            char inChar;
+            if (!(std::cin >> inChar)) return false;
+            reg_file[R3] = static_cast<uint32_t>(inChar);
+            return true;
+        }
+        case 98: {
+            try {
+                dumpRegisterContents();
+                return true;
+            } catch (const exception&) {
+                cout << "ERROR IN TRP 98:" << endl;
+                return false;
+            }
+            return false;
+        }
+        default: {
+            return false;  // in case something went horribly wrong, say it went wrong
+        }
+    }
+
+    // IMM 0    -> EXECUTE STOP / EXIT ROUTINE
+}
+
+//------------------ START OF EXECUTE HELPER FUNCTIONS ------------------
+
+void STOP() {
+    runBool = false;
+    return;
+}
+
+// Prints one register name and value per line. Register name is in all caps, followed by a tab character, followed by the integer value printed as an unsigned base 10 integer.
+void dumpRegisterContents() {
+    for (size_t i = 0; i < NUM_REGS; i++) {
+        cout << REG_NAMES[i] << "\t" << static_cast<uint32_t>(reg_file[i]) << endl;
+    }
+    return;
+}
+
+//------------------ END OF EXECUTE HELPER FUNCTIONS ------------------
+
+void invalidInstruction() {
+    cout << "INVALID INSTRUCTION AT: " << (reg_file[PC] - 8) << endl;
 }

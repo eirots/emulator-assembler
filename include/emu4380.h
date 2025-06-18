@@ -13,11 +13,14 @@ using namespace std;
 
 // Global variables
 extern uint32_t* reg_file;
+
 extern unsigned char* prog_mem;  // default size is 131,072 elements/bytes
-extern uint32_t cntrl_regs[5];   // stores instruction operation, register operands, and immediate value
-extern uint32_t data_regs[2];    // stores register operand values retrieved from register file
+
+extern uint32_t cntrl_regs[5];  // stores instruction operation, register operands, and immediate value
+extern uint32_t data_regs[2];   // stores register operand values retrieved from register file
 extern uint32_t mem_size;
-constexpr size_t NUM_REGS = 22;
+
+extern bool runBool;  // boolean for executing fetch, decode, execute
 
 // enums
 enum RegNames : std::size_t {
@@ -249,5 +252,19 @@ bool DIVI();
  * @note based on immediate value
  */
 bool TRP();
+
+/**
+ * @brief executes the stop routine
+ * @details toggles runBool, a value used to execute the main fetch, decode, execute loop.
+ */
+void STOP();
+
+/**
+ * @brief Prints all register contents to stdout
+ * @details Prints one register name and value per line. Register name is in all caps, followed by a tab character, followed by the integer value printed as an unsigned base 10 integer.
+ */
+void dumpRegisterContents();
+
+void invalidInstruction();
 
 #endif
