@@ -3,6 +3,7 @@
 
 ## Worklog (Project 2)
 | date | hours worked | what did I work on? | 
+|-----|--------------|---------------------|
 |6/19 | 2 hours | "state machine" for  instructions |
 | 6/20 |  1 hour | continuing "state machine" for instructions |
 | 6/25 | 2 hours | More pen and paper design, created branch and added file structure  |
