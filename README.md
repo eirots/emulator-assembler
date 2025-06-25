@@ -1,9 +1,17 @@
 # CS4380 Project 1 - 4380 Emulator Mark 1
-# INVOKING THE NON_LATE POLICY
+
+
+## Worklog (Project 2)
+| date | hours worked | what did I work on? | 
+|6/19 | 2 hours | "state machine" for  instructions |
+| 6/20 |  1 hour | continuing "state machine" for instructions |
+| 6/25 | 2 hours | More pen and paper design, created branch and added file structure  |
+|  | |  |
 
 
 
-## Worklog
+
+## Worklog (Project 1)
 |date | hours worked | what did I work on? |
 |-----|--------------|---------------------|
 |5/19/25| 2 hours | Set up base of project, added declarations for enums and globals and function prototypes  |
