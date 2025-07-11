@@ -4,10 +4,24 @@
 ## Worklog (Project 2)
 | date | hours worked | what did I work on? | 
 |-----|--------------|---------------------|
-|6/19 | 2 hours | "state machine" for  instructions |
-| 6/20 |  1 hour | continuing "state machine" for instructions |
-| 6/25 | 2 hours | More pen and paper design, created branch and added file structure  |
-|  | |  |
+| 6/19 | 2 h | "state machine" for  instructions |
+| 6/20 | 1 h | continuing "state machine" for instructions |
+| 6/25 | 2 h | More pen and paper design, created branch and added file structure  |
+| 6/26 | 3 h | EVEN MORE pen and paper design, finished state machine for instructions. Started working on assembler, laid out states I will need. Finished (what I thought at the time was half) of the data secton. | 
+| 6/27 | 8 h | Created classes, caused a refactor. Got lost in the sauce while refactoring, ended up making a whole file skeleton. Added argument parser, had major issues with that. |
+| 6/28 | 2 h | Worked on major bug with data directives lacking labels. Moved to code section | 
+| 6/29 | weekend day | weekend day | 
+| 6/30 | 3 h | ran into yet another refactor. starting to realize that I should plan better ahead of time. |
+| 7/01 |  4 h | tightened argument-parser edge cases |
+| 7/02 | 3 h | Added Makefile targets; integrated `asm_copy` and `asm_run` rule for easier testing; improved build output |
+| 7/03 | 2 h | Debugged symbol-table collision; improved error-report formatting. More progress on code section|
+| 7/04 | 1 h | Light coding (holiday): comments & TODO cleanup |
+| 7/05 | 3 h | fixed off-by-one bug that was killing me, added some more helpers to stream object |
+| 7/06 | weekend | weekend |
+| 7/08 | 6 h | project stopped working because of Apple update. Spent the entire time fixing my enviromnet, because Apple decided to update things on their own. Really huge bummer, large amount of time wasted. |
+| 7/09 | 6 h | More solid progress on code section |
+| 7/10 | 6 h | Still working on code section |
+| 7/11 | TODO: | TODO: |
 
 
 
