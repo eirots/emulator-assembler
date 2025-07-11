@@ -1,0 +1,260 @@
+Running main() from /mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/build/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 9 tests from 4 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from data_structures
+[ RUN      ] data_structures.basic
+[       OK ] data_structures.basic (0 ms)
+[----------] 1 test from data_structures (0 ms total)
+
+[----------] 1 test from test_fetch
+[ RUN      ] test_fetch.basic
+[       OK ] test_fetch.basic (0 ms)
+[----------] 1 test from test_fetch (0 ms total)
+
+[----------] 3 tests from test_decode
+[ RUN      ] test_decode.valid_proj1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:244: Failure
+Value of: decode()
+  Actual: false
+Expected: true
+Failed valid STR decode test 3. Are you doing unsanctioned bounds checking on memory during decode?
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:268: Failure
+Value of: decode()
+  Actual: false
+Expected: true
+Failed valid LDR decode test 3. Are you doing unsanctioned bounds checking on memory during decode?
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:293: Failure
+Value of: decode()
+  Actual: false
+Expected: true
+Failed valid STB decode test 3. Are you doing unsanctioned bounds checking on memory during decode?
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:316: Failure
+Value of: decode()
+  Actual: false
+Expected: true
+Failed valid LDB decode test 3. Are you doing unsanctioned bounds checking on memory during decode?
+[  FAILED  ] test_decode.valid_proj1 (8 ms)
+[ RUN      ] test_decode.invalid_proj1
+[       OK ] test_decode.invalid_proj1 (0 ms)
+[ RUN      ] test_decode.unimplemented_proj1
+[       OK ] test_decode.unimplemented_proj1 (0 ms)
+[----------] 3 tests from test_decode (9 ms total)
+
+[----------] 4 tests from test_execute
+[ RUN      ] test_execute.jmp_tests
+[       OK ] test_execute.jmp_tests (0 ms)
+[ RUN      ] test_execute.mov_tests
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:667: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 15
+  42
+Register value not updated properly during MOV execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:673: Failure
+Expected equality of these values:
+  reg_file[R2]
+    Which is: 15
+  42
+Register value not updated properly during MOV execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:679: Failure
+Expected equality of these values:
+  reg_file[R15]
+    Which is: 15
+  42
+Register value not updated properly during MOV execute test 3
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:685: Failure
+Expected equality of these values:
+  reg_file[SB]
+    Which is: 15
+  42
+Register value not updated properly during MOV execute test 4
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:691: Failure
+Expected equality of these values:
+  reg_file[HP]
+    Which is: 15
+  42
+Register value not updated properly during MOV execute test 4
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:790: Failure
+Expected equality of these values:
+  tempUInt
+    Which is: 15
+  0xffffff
+    Which is: 16777215
+Memory value not updated properly during STR execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:798: Failure
+Expected equality of these values:
+  tempUInt
+    Which is: 15
+  1055
+Memory value not updated properly during STR execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:811: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 15
+  0x02016557
+    Which is: 33645911
+Register value not updated properly during LDR execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:817: Failure
+Expected equality of these values:
+  reg_file[SB]
+    Which is: 15
+  0x06
+    Which is: 6
+Register value not updated properly during LDR execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:831: Failure
+Expected equality of these values:
+  prog_mem[0xF0]
+    Which is: '\xF' (15)
+  37
+Memory value not updated properly during STB execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:838: Failure
+Expected equality of these values:
+  prog_mem[0x0F]
+    Which is: '\xF' (15)
+  0x1F
+    Which is: 31
+Memory value not updated properly during STB execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:852: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 15
+  0x57
+    Which is: 87
+Register value not updated properly during LDB execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:858: Failure
+Expected equality of these values:
+  reg_file[SB]
+    Which is: 15
+  0x06
+    Which is: 6
+Register value not updated properly during LDB execute test 2
+[  FAILED  ] test_execute.mov_tests (1 ms)
+[ RUN      ] test_execute.arithmetic_tests
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:878: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 27
+  12
+Register R0 value not updated properly during ADD execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:887: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 27
+  10
+Register value R1 not updated properly during ADD execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:901: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 22
+  12
+Register R0 value not updated properly during ADDI execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:909: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 13
+  10
+Register value R1 not updated properly during ADDI execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:924: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 3
+  -2
+Register R0 value not updated properly during SUB execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:933: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 3
+  14
+Register value R1 not updated properly during SUB execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:947: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 8
+  -2
+Register R0 value not updated properly during SUBI execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:955: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 17
+  14
+Register value R1 not updated properly during SUBI execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:970: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 180
+  35
+Register R0 value not updated properly during MUL execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:979: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 180
+  -24
+Register value R1 not updated properly during MUL execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:993: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 105
+  35
+Register R0 value not updated properly during MULI execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:1002: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 4294967266
+  -24
+Register value R1 not updated properly during MULI execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:1017: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 1
+  0
+Register R0 value not updated properly during DIV execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:1026: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 1
+  0
+Register value R1 not updated properly during DIV execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:1035: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 1
+  6
+Register value R1 not updated properly during DIV execute test 3
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:1050: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 1
+  0
+Register R0 value not updated properly during SDIV execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:1059: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 1
+  -6
+Register value R1 not updated properly during SDIV execute test 2
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:1073: Failure
+Expected equality of these values:
+  reg_file[R0]
+    Which is: 2
+  0
+Register R0 value not updated properly during DIVI execute test 1
+/mnt/c/Users/Frank Jones/Documents/Repositories/CS4380/summer2025/students/cs4380-emulator-assembler-eirots/test/test.cpp:1081: Failure
+Expected equality of these values:
+  reg_file[R1]
+    Which is: 4294967289
+  -6
+Register value R1 not updated properly during DIVI execute test 2 (are you doing signed division?)
+[  FAILED  ] test_execute.arithmetic_tests (1 ms)
+[ RUN      ] test_execute.trp_tests
+[       OK ] test_execute.trp_tests (0 ms)
+[----------] 4 tests from test_execute (3 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 4 test suites ran. (15 ms total)
+[  PASSED  ] 6 tests.
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] test_decode.valid_proj1
+[  FAILED  ] test_execute.mov_tests
+[  FAILED  ] test_execute.arithmetic_tests
+
+ 3 FAILED TESTS
