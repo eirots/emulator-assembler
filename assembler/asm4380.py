@@ -1,8 +1,6 @@
-import logging
 import argparse
 import re
 import sys
-# TODO: YOU WERE LAST WORKING IN THE _BEGIN_CODE FUNCTION, DONT FORGET DAT BAYBEEE 
 
 from enum import Enum, auto, IntEnum
 
@@ -53,6 +51,33 @@ class Mnemonic(IntEnum):
     TRP = 0x1F
 
 
+REG_MAP = {name: i for i, name in enumerate([
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7",
+    "R8",
+    "R9",
+    "R10",
+    "R11",
+    "R12",
+    "R13",
+    "R14",
+    "R15",
+    "PC",
+    "SL",
+    "SB",
+    "SP",
+    "FP",
+    "HP" 
+])
+   
+}
+
 VALID_OPS = {
         "JMP",
         "MOV",
@@ -71,7 +96,7 @@ VALID_OPS = {
         "DIV",
         "SDIV",
         "DIVI",
-        "TRP"
+        "TRP"  
     }
 
 
@@ -131,10 +156,10 @@ class CharStream:
     
     def consume_everything_until_eol(self):
         ch = self.peek()
-        while not ch == "\n":
+        while ch not in ("\n", ""):
             self.next_char()
             ch = self.peek()
-        return
+        return        
 
 
 class Parser:
@@ -142,14 +167,18 @@ class Parser:
     def __init__(self, path):
         self.stream = CharStream(path)
         self.state = States.START_LINE
-        self.location_counter = 0  # pointer to end of bytes 
+        self.location_counter = 4  # pointer to end of bytes 
         self.symbol_table = {}
         
-        self.data_bytes = bytearray()
+        self.data_bytes = bytearray(b'\x00\x00\x00\x00')  # RESERVE FIRST 4 BYTES FOR ENTRY 
         self.fixups = []
         
         self.error = False
         self.data_possible = True  # turned off when first encountering a code portion
+        
+        self.entries = []
+        self.current_op = None
+        self.current_operands = []
         
     def run(self) -> int:
         handlers = {
@@ -162,7 +191,8 @@ class Parser:
             States.NUMBER_FOUND: self._number_found,
             States.LINE_FINISHED: self._line_finished,
             States.DIRECTIVE_DONE: self._directive_done,
-            States.BEGIN_CODE: self._begin_code
+            States.BEGIN_CODE: self._begin_code,
+            States.GATHER_TOKENS: self._gather_tokens
             }
         
         while not self.stream.eof() and not self.error: 
@@ -171,8 +201,16 @@ class Parser:
         if self.error:
             return self.debugDump()
         
+        self.stream.close()
+
+        if self.entries:
+            entry_addr = self.entries[0] [2]
+            self.data_bytes[0:4] = bytes(split_to_bytes(entry_addr, 4))
+        
+        self._assemble_entries()
+        
     # --------------------------------
-    # constants
+    # constants / maps /etc
     # --------------------------------
 
     # --------------------------------
@@ -210,7 +248,9 @@ class Parser:
               
         # alphanumeric after code means that we've entered the code section 
         if self._is_alpha_numeric(): 
-            if self.data_possible: self.data_possible = False
+            if self.data_possible: 
+                self.data_possible = False
+            
             self.state = States.BEGIN_CODE
             # self._print_error()                 
             return        
@@ -220,26 +260,75 @@ class Parser:
         self._print_error()          
     
     def _begin_code(self) -> None: 
-        s = ""
+        # Below is valid instruction format: 
+        # [optional_label] <operator> <operand_list> [optional_comment]
         
         if self.stream.peek(4)[3] == " ":
-            s = "".join(self.stream.next_n(3))
+            op = "".join(self.stream.next_n(3))
         else:
-            s = "".join(self.stream.next_n(4))
+            op = "".join(self.stream.next_n(4))
         
+        if op not in VALID_OPS:
+            return self._print_error()
+        
+        self.current_op = op
+        self.current_operands = []  # this is shared by everything, if we're doing a new instruction we have to nuke it 
+        self.stream.consume_white()
+        
+        addr = self.location_counter
+        self.entries.append(
+            (op, self.current_operands, addr)
+        )
         self.data_bytes.extend(b'\x00' * 8)
         self.location_counter += 8  # reserving space for the future 
-        
-        if s not in VALID_OPS:
-            self._print_error()
-        
-        self.stream.consume_white()
+        self.state = States.GATHER_TOKENS
         
         return
 
     def _gather_tokens(self):
+        # gameplan: consume until you hit a semicolon or newline character. 
+        # operands can be the following:
+            # Registers: (indicated by 2 or 3 character register names listed in the register table)
+            # numeric constants: (represented as literal values)
+            # labels: as defined in the assembly file, and later resolved to addresses by the assembler. 
+                # LABELS ARE CASE SENSITIVE
         
-        # TODO LAST WORKING HERE, IF YOU TRY TO CHECK WHERE YOU WERE LAST WORKING, IT WAS EXACTLY HERE 
+        while True:
+            self.stream.consume_white()
+            ch = self.stream.peek()
+            
+            if ch in (";", "\n", ""):
+                break
+            
+            if ch == "'":  # handling character literals 
+                literal = [self.stream.next_char()]  # eat the opening quote 
+                ch = self.stream.next_char()
+                if ch == "\\":
+                    literal.append(ch)
+                    literal.append(self.stream.next_char())
+                else:
+                    literal.append(ch)
+                
+                closing = self.stream.next_char()
+                if closing != "'":  # we have to see the closing quote to make sure its valid syntax 
+                    return self._print_error()
+                literal.append(closing)
+                self.current_operands.append("".join(literal))
+                continue
+            
+            sb = []  # stringbuilder stand-in, reset before looking at the next token
+            while ch not in (" ", "\t", ";", "\n", ""):
+                sb.append(self.stream.next_char())
+                ch = self.stream.peek()
+            
+            self.current_operands.append("".join(sb))
+            
+            if self.stream.peek() == ",":  # eat comma between operands, if there is one 
+                self.stream.next_char()
+                continue
+        
+        self.state = States.LINE_FINISHED
+       
         return
     
     def _start_of_label(self):
@@ -265,8 +354,9 @@ class Parser:
             self.state = States.BEGIN_DIRECTIVE
             return 
         elif self._is_alpha_numeric():
-            if self.data_possible: self.data_possible = False
-            self.State = States.BEGIN_CODE
+            if self.data_possible: 
+                self.data_possible = False
+            self.state = States.BEGIN_CODE
             return 
         
         # anything else is an error 
@@ -438,22 +528,332 @@ class Parser:
         # hard coded alphanumeric, dollar sign, or underscore 
                 # 0-9               a-z (uppercase)    a-z (lowercase)    $(dollar sign) _(underscore)
         return (48 <= o <= 57) or (65 <= o <= 90) or (97 <= o <= 122) or (o == 36) or (o == 95)
-
+   
     def debugDump(self) -> None: 
+
         print("Dump of current session: ")
         print("\tstream          ", self.stream)
         print("\tstate           ", self.state)
         print("\tlocation_counter", self.location_counter)
         print("\tsymbol_table    ", self.symbol_table)
-        self.dumpBytes()
-        print("\tdata_bytes hex: ", self.data_bytes.hex())
+        # print("\tdata_bytes hex: ", self.data_bytes.hex())
         print("\terror           ", self.error)
-        print("\tdata_possible   ", self.data_possible, "\n")
+        print("\tdata_possible   ", self.data_possible)
+        print("\tentries   ", self.entries)
+        print("\tcurrent_op   ", self.current_op)
+        print("\tfixups.      ", self.fixups)
+        # print("\tcurrent_operands   ", self.current_operands, "\n")
+        print("\n")
+        print("\tdata bytes:\n")
+        self.dumpBytes()
         
     def dumpBytes(self) -> None:
-        print("\t\tindex\t byte")
-        for i, b in enumerate(self.data_bytes):
-            print(f"\t\t{i:3}\t 0x{b:02X}")
+        width = 16
+        length = len(self.data_bytes)
+        
+        for offset in range(0, length, width):
+            chunk = self.data_bytes[offset:offset + width]
+            
+            hex_bytes = " ".join(f"{b:02x}" for b in chunk)
+            ascii_repr = ''.join((chr(b) if 32 <= b < 127 else '.') for b in chunk)
+            print(f"{offset:08X}: {hex_bytes:<{width*3}}  {ascii_repr}")
+
+    # --------------------------------
+    # ASSEMBLY STEP
+    # -------------------------------- 
+    def _assemble_entries(self) -> None:
+        emit_handlers = {
+        "JMP": self._emit_jmp,
+        "MOV": self._emit_mov,
+        "MOVI":self._emit_movi,
+        "LDA": self._emit_lda,
+        "STR": self._emit_str,
+        "LDR": self._emit_ldr,
+        "STB": self._emit_stb,
+        "LDB": self._emit_ldb,
+        "ADD": self._emit_add,
+        "ADDI":self._emit_addi,
+        "SUB": self._emit_sub,
+        "SUBI":self._emit_subi,
+        "MUL": self._emit_mul,
+        "MULI":self._emit_muli,
+        "DIV":self._emit_div,
+        "SDIV":self._emit_sdiv,
+        "DIVI":self._emit_divi,
+        "TRP": self._emit_trp
+    }
+        
+        for op, operands, addr in self.entries:
+            handler = emit_handlers.get(op)
+            if not handler:
+                raise ValueError(f"No emitter for operation {op}")
+            handler(operands, addr)
+        self._apply_fixups()
+        # self.debugDump()
+        return
+
+    def _resolve_operand(self, token, patch_address):
+        ESCAPES = {
+            't': "\t",
+            '\\': '\\',
+            'n': '\n',
+            "'": "'",
+            '"': '"',
+            'r': '\r',
+            'b': '\b',
+            }
+        """
+        valid operands are:
+            -registers
+            -numeric constants 
+            -labels"""
+            
+        token = token.rstrip(",")
+        
+        if token.startswith("#"):  # numeric constant, token should have # in position zero, ex #1234
+            return int(token[1:], 10)  # grab past the #, then return a base 10 int of that string 
+
+        elif len(token) >= 2 and token[0] == "'" and token[-1] == "'":
+            inner = token[1:-1]
+            if inner.startswith("\\"):
+                inner = ESCAPES.get(inner[1], None)
+                if len(inner) == 1:
+                    return ord(inner)
+                else:
+                    self._print_error()
+            else:
+                ch = inner
+            
+            if ch is None or len(ch) != 1:
+                # print("bad dog ")
+                return self._print_error()
+            return ord(ch)
+                    
+        elif token.upper() in REG_MAP:  # registers are case insensitive 
+            return REG_MAP[token.upper()]
+        
+        elif token in self.symbol_table:  # Assume that anything else is a label that we need to fix. We'll catch problems later 
+            return self.symbol_table[token]
+        
+        self.fixups.append((patch_address, token))  # if token wasn't in the symbol table, we need to go back and fix this later. 
+        
+        return 0
+    
+    def _write_bytes(self,
+                     address: int,
+                     opcode: int,
+                     operand_1:int,
+                     operand_2:int,
+                     operand_3:int,
+                     immediate:int) -> None:
+        
+        """Lay out an 8-byte instruction at `address` 
+        byteorder: 
+        # [operand_value] [operand_1] [operand_2] [operand_3] [immediate_value]
+         """
+        self.data_bytes[address] = opcode
+        self.data_bytes[address + 1] = operand_1
+        self.data_bytes[address + 2] = operand_2
+        self.data_bytes[address + 3] = operand_3    
+        self.data_bytes[address + 4:address + 8] = split_to_bytes(immediate, 4) 
+        
+        return
+     
+    def _apply_fixups(self):
+        for patch_addr, label in self.fixups:
+            if label not in self.symbol_table:
+                self._print_error()
+            target = self.symbol_table[label]
+            self.data_bytes[patch_addr:patch_addr + 4] = bytes(split_to_bytes(target, 4))
+                
+        # self.debugDump()
+        return 
+    
+    def _write_bin(self, file) -> bool:
+        
+        with open(file, "wb") as f:
+            f.write(self.data_bytes)
+        f.close()
+        # self.debugDump()
+        return
+    
+    # --------------------------------
+    # Emitters
+    # --------------------------------
+    
+    """byteorder: 
+        # [operand_value] [operand_1] [operand_2] [operand_3] [immediate_value]
+        
+        opcode = 0  # Mnemonic.XXXX.value
+        operand_1 = 0  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+    """
+
+    def _emit_jmp(self, operands, addr):
+        # [operand_value] [operand_1] [operand_2] [operand_3] [immediate_value]
+        opcode = Mnemonic.JMP.value
+        operand_1 = 0
+        operand_2 = 0
+        operand_3 = 0
+        imm = self._resolve_operand(operands[0], addr + 4)
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)
+        return
+
+    def _emit_mov(self, operands, addr):
+        opcode = Mnemonic.MOV.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RD
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  # RS
+        operand_3 = 0  # DC
+        imm = 0  # DC
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)
+        return
+
+    def _emit_movi(self, operands, addr):
+        opcode = Mnemonic.MOVI.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #                                             self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #                                             self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[1], addr + 4)  # IMM (NUMERIC LITERAL)     
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)        
+        return
+
+    def _emit_lda(self, operands, addr):
+        opcode = Mnemonic.LDA.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = 0  # DC  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  # DC  self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[1], addr + 4)  # imm address
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)        
+        return
+
+    def _emit_str(self, operands, addr):
+        opcode = Mnemonic.STR.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = 0  # DC  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  # DC  self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[1], addr + 4)  # ADDRESS
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_ldr(self, operands, addr):
+        opcode = Mnemonic.LDR.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = 0  # dc  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  # dc  self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[1], addr + 4)  # IMM ADDRESS
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_stb(self, operands, addr):
+        opcode = Mnemonic.STB.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[1], addr + 4)  # IMM ADDRESS 
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_ldb(self, operands, addr):
+        opcode = Mnemonic.LDB.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_add(self, operands, addr):
+        opcode = Mnemonic.ADD.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = self._resolve_operand(operands[2], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_addi(self, operands, addr):
+        opcode = Mnemonic.ADDI.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = 0  # self._resolve_operand(operands[2], addr + 3) 
+        imm = self._resolve_operand(operands[2], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_sub(self, operands, addr):
+        opcode = Mnemonic.SUB.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = self._resolve_operand(operands[2], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_subi(self, operands, addr):
+        opcode = Mnemonic.SUBI.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = 0  # self._resolve_operand(operands[2], addr + 3) 
+        imm = self._resolve_operand(operands[2], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_mul(self, operands, addr):
+        opcode = Mnemonic.MUL.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = self._resolve_operand(operands[2], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_muli(self, operands, addr):
+        opcode = Mnemonic.MULI.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = 0  # self._resolve_operand(operands[2], addr + 3) 
+        imm = self._resolve_operand(operands[2], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_div(self, operands, addr):
+        opcode = Mnemonic.DIV.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = self._resolve_operand(operands[2], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_sdiv(self, operands, addr):
+        opcode = Mnemonic.SDIV.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = self._resolve_operand(operands[2], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+        return
+
+    def _emit_divi(self, operands, addr):
+        opcode = Mnemonic.DIVI.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = 0  # self._resolve_operand(operands[2], addr + 3) 
+        imm = self._resolve_operand(operands[2], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_trp(self, operands, addr):
+        opcode = Mnemonic.TRP.value
+        operand_1 = 0  # self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  # self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  # self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[0], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm) 
+        return
 
     
 # --------------------------------
@@ -492,19 +892,21 @@ def split_to_bytes(value: int, width: int) -> list[int]:
 
 def main(argv=None):
     args = parse_args(argv)
-    filename = args.input
+    infilename = args.input
     
-    if not validate_file_name(filename):
+    if not validate_file_name(infilename):
         print("usage: python3 asm4380.py input_file.asm")
         sys.exit(1)  # requirement 6
 
-    # TODO: finish this section. make sure when exiting the data section that you toggle the data possible boolean to off. 
-    # error boolean checking before switch, also have an int for error cause 
-    p = Parser(filename)
+    outfilename = infilename.removesuffix(".asm")
+    outfilename += ".bin"
+
+    p = Parser(infilename)
     p.run()
+    p._write_bin(outfilename)
+    # print(outfilename)
     
-    logging.info("done.")
-    print("i am alive")
+    return 0
 
 
 if __name__ == "__main__":

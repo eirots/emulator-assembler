@@ -21,8 +21,10 @@
 | 7/08 | 6 h | project stopped working because of Apple update. Spent the entire time fixing my enviromnet, because Apple decided to update things on their own. Really huge bummer, large amount of time wasted. |
 | 7/09 | 6 h | More solid progress on code section |
 | 7/10 | 6 h | Still working on code section |
-| 7/11 | TODO: | TODO: |
-
+| 7/11 | 3 h| serious issues with my previous design for handling instructions in code section. Devised a new way using handlers |
+| 7/12 | 4 h| More issues with how I was handling literals and "fixups." Did some more reading on how to handle them, then made adjustments as needed |
+| 7/13 | weekend | weekend |
+| 7/14 | 5 h | Finished testing, cleaned up some bugs I missed, verified that functions work as they should.  |
 
 
 
