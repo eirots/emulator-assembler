@@ -1,12 +1,36 @@
-# CS4380 Project 1 - 4380 Emulator Mark 1
-# INVOKING THE NON_LATE POLICY
+# CS4380 Project 2 - 4380 Emulator Mark 1
+## INVOKING THE NON_LATE POLICY
+
+## Worklog (Project 2)
+| date | hours worked | what did I work on? | 
+|-----|--------------|---------------------|
+| 6/19 | 2 h | "state machine" for  instructions |
+| 6/20 | 1 h | continuing "state machine" for instructions |
+| 6/25 | 2 h | More pen and paper design, created branch and added file structure  |
+| 6/26 | 3 h | EVEN MORE pen and paper design, finished state machine for instructions. Started working on assembler, laid out states I will need. Finished (what I thought at the time was half) of the data secton. | 
+| 6/27 | 8 h | Created classes, caused a refactor. Got lost in the sauce while refactoring, ended up making a whole file skeleton. Added argument parser, had major issues with that. |
+| 6/28 | 2 h | Worked on major bug with data directives lacking labels. Moved to code section | 
+| 6/29 | weekend day | weekend day | 
+| 6/30 | 3 h | ran into yet another refactor. starting to realize that I should plan better ahead of time. |
+| 7/01 |  4 h | tightened argument-parser edge cases |
+| 7/02 | 3 h | Added Makefile targets; integrated `asm_copy` and `asm_run` rule for easier testing; improved build output |
+| 7/03 | 2 h | Debugged symbol-table collision; improved error-report formatting. More progress on code section|
+| 7/04 | 1 h | Light coding (holiday): comments & TODO cleanup |
+| 7/05 | 3 h | fixed off-by-one bug that was killing me, added some more helpers to stream object |
+| 7/06 | weekend | weekend |
+| 7/08 | 6 h | project stopped working because of Apple update. Spent the entire time fixing my enviromnet, because Apple decided to update things on their own. Really huge bummer, large amount of time wasted. |
+| 7/09 | 6 h | More solid progress on code section |
+| 7/10 | 6 h | Still working on code section |
+| 7/11 | 3 h| serious issues with my previous design for handling instructions in code section. Devised a new way using handlers |
+| 7/12 | 4 h| More issues with how I was handling literals and "fixups." Did some more reading on how to handle them, then made adjustments as needed |
+| 7/13 | weekend | weekend |
+| 7/14 | 5 h | Finished testing, cleaned up some bugs I missed, verified that functions work as they should.  |
 
 
 ## Resubmission 1 Notes: 
 #### Root Causes:
  1. Misunderstanding of the spec, and I did not account for the 4 byte address of first instruction when running through a binary. This is a big oversight, and threw many things off. 
  2. `decode()` was performing bounds checking on immeditate values, when that step actually belongs in `execute()`. This would either reject valid instructions in the best case, or in the worst, continue on with garbage values. I believe this then led to the issues seen with the arithmatic tests. 
-
 #### Fixes implemented:
 1. **`load_binary()`** 
     * Copy the entire file at address 0. 
@@ -17,8 +41,7 @@
     * Added a new helper function `addr_in_range(addr, bytes)`, and put checks inside `execute()`, defaulting to 1 for byte operations and needing to pass 4 for word operations. 
 
 
-___________
-
+_______________
 
 ## Worklog: Part 1 
 |date | hours worked | what did I work on? |
