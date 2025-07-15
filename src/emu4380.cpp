@@ -41,6 +41,7 @@ constexpr const char* REG_NAMES[NUM_REGS] = {
     "HP"};
 
 bool fetch() {
+    // same for every type of instruction, because instructions are a fixed length
     constexpr size_t INSTR_SIZE = 8;
 
     if (reg_file[PC] + INSTR_SIZE > mem_size) return false;  // about to run out of memory
@@ -53,8 +54,8 @@ bool fetch() {
     uint32_t imm = 0;                                              // building immediate
     imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]);        // least-significant
     imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]) << 8;   // next
-    imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]) << 16;  // next                   bits 23
-    imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]) << 24;  // most-significant byte, bits 31-34
+    imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]) << 16;  // next
+    imm |= static_cast<uint32_t>(prog_mem[reg_file[PC]++]) << 24;  // most-significant byte,
 
     cntrl_regs[IMMEDIATE] = imm;
 
@@ -81,6 +82,10 @@ bool is_state_rg(uint32_t r) {
 // validate if an address is within memory
 bool is_valid_addr(uint32_t addr) {
     return addr < mem_size;
+}
+
+bool addr_in_range(uint32_t addr, size_t bytes = 1) {
+    return addr + bytes <= mem_size;
 }
 
 //----------- END OF DECODE HELPER FUNCTIONS -----------
@@ -155,10 +160,7 @@ bool decode() {
             // immediate value ADDRESS
             // store integer in RS at address
             const uint32_t rs = cntrl_regs[OPERAND_1];
-
             if (!is_valid_rg(rs)) return false;
-            if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
-
             data_regs[REG_VAL_1] = reg_file[rs];
             return true;
         }
@@ -170,12 +172,7 @@ bool decode() {
             // operand 3 DC
             // immediate value ADDRESS
             const uint32_t rd = cntrl_regs[OPERAND_1];
-            const uint32_t addr = cntrl_regs[IMMEDIATE];
-
             if (!is_valid_rg(rd)) return false;
-            if (addr + 4 > mem_size) return false;
-
-            data_regs[REG_VAL_1] = (prog_mem[addr + 0]) | (prog_mem[addr + 1] << 8) | (prog_mem[addr + 2] << 16) | (prog_mem[addr + 3] << 24);
             return true;
         }
 
@@ -186,11 +183,9 @@ bool decode() {
             // operand 3 DC
             // immediate value ADDRESS
             const uint32_t rs = cntrl_regs[OPERAND_1];
+            if (!is_valid_rg(rs)) return false;
 
-            if (!is_valid_rg(cntrl_regs[OPERAND_1])) return false;
-            if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
-
-            data_regs[REG_VAL_1] = reg_file[rs] & 0xFFu;
+            data_regs[REG_VAL_1] = reg_file[rs] & 0xFFu;  // least significant byte
             return true;
         }
 
@@ -201,11 +196,8 @@ bool decode() {
             // operand 3 DC
             // immediate value ADDRESS
             const uint32_t rd = cntrl_regs[OPERAND_1];
-
             if (!is_valid_rg(rd)) return false;
-            if (!is_valid_addr(cntrl_regs[IMMEDIATE])) return false;
 
-            data_regs[REG_VAL_1] = prog_mem[cntrl_regs[IMMEDIATE]];
             return true;
         }
 
@@ -421,7 +413,6 @@ bool init_mem(unsigned int size) {
 
     if (!init_registers()) return false;  // couldn't initialize registers
 
-    reg_file[PC] = 0;
     reg_file[SL] = 0;
     reg_file[SB] = mem_size;
     reg_file[SP] = mem_size;
@@ -433,21 +424,26 @@ bool init_mem(unsigned int size) {
 
 uint32_t load_binary(const char* filename) {
     ifstream in(filename, std::ios::binary | std::ios::ate);
-    if (!in) {
-        return 1;
-    }
+    if (!in) return 1;
 
     streamsize file_size = in.tellg();
-    if (file_size > mem_size) {
-        return 2;
+    if (file_size > mem_size || file_size < 4) {
+        return 2;  // file too small
     }
 
-    in.seekg(0, std::ios::beg);
+    in.seekg(0);
 
-    if (!in.read(reinterpret_cast<char*>(prog_mem), file_size)) {
-        cerr << "Error while reading " << filename << endl;
-        return false;
-    }
+    if (!in.read(reinterpret_cast<char*>(prog_mem), file_size)) return 3;
+
+    // reading entry point, this is why memory was off at the beginning
+    uint32_t entry = prog_mem[0] |
+                     (prog_mem[1] << 8) |
+                     (prog_mem[2] << 16) |
+                     (prog_mem[3] << 24);
+
+    if (entry >= mem_size) return 4;
+
+    reg_file[PC] = entry;
     return 0;
 }
 
@@ -460,9 +456,7 @@ int runEmulator(int argc, char** argv) {
     }
 
     if (argc < 3) {
-        mem_size = DEFAULT_MEMORY_SIZE;
-
-        // cout << "memsize defaulted to: " << mem_size << endl;
+        mem_size = 131'072;
     } else {
         try {
             size_t pos = 0;
@@ -493,21 +487,12 @@ int runEmulator(int argc, char** argv) {
         return 2;
     }
 
-    /*    while (runBool) {
-            if (!fetch()) {
-                invalidInstruction();
-                return 1;
-            }
-            if (!decode()) {
-                invalidInstruction();
-                return 1;
-            }
-            if (!execute()) {
-                invalidInstruction();
-                return 1;
-            }
-        } */
-
+    while (runBool) {
+        if (!fetch() || !decode() || !execute()) {
+            invalidInstruction();
+            return 1;
+        }
+    }
     return 0;
 }
 
@@ -573,12 +558,14 @@ bool LDA() {
 bool STR() {
     try {
         uint32_t addr = cntrl_regs[IMMEDIATE];
-        uint32_t val = data_regs[REG_VAL_1];
+        if (!addr_in_range(addr, 4)) return false;
 
+        uint32_t val = data_regs[REG_VAL_1];
         for (int i = 0; i < 4; i++) {
-            prog_mem[addr + i] = (val >> (i * 8)) & 0xFF;
+            prog_mem[addr + i] = static_cast<unsigned char>(val >> (i * 8));
         }
         return true;
+
     } catch (const exception&) {
         cerr << "Error in STR" << endl;
         return false;
@@ -591,8 +578,18 @@ bool STR() {
 // immediate value ADDRESS
 bool LDR() {
     try {
-        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1];
+        const uint32_t addr = cntrl_regs[IMMEDIATE];
+        if (!addr_in_range(addr, 4)) return false;
+
+        uint32_t val =
+            (prog_mem[addr + 0]) |
+            (prog_mem[addr + 1] << 8) |
+            (prog_mem[addr + 2] << 16) |
+            (prog_mem[addr + 3] << 24);
+
+        reg_file[cntrl_regs[OPERAND_1]] = val;
         return true;
+
     } catch (const exception&) {
         cerr << "Error in LDR" << endl;
         return false;
@@ -604,9 +601,12 @@ bool LDR() {
 // operand 3 DC
 // immediate value ADDRESS
 bool STB() {
-    // store list significant byte in RS at address
+    // store leasssssst ___|^~ (that's a snake) significant byte in RS at address
     try {
-        prog_mem[cntrl_regs[IMMEDIATE]] = static_cast<unsigned char>(data_regs[REG_VAL_1]);
+        const uint32_t addr = cntrl_regs[IMMEDIATE];
+        if (!addr_in_range(addr)) return false;
+
+        prog_mem[addr] = static_cast<unsigned char>(data_regs[REG_VAL_1]);
         return true;
     } catch (const exception&) {
         cerr << "Error in STB" << endl;
@@ -619,8 +619,12 @@ bool STB() {
 // operand 3 DC
 // immediate value ADDRESS
 bool LDB() {
+    // load byte at address to RD
     try {
-        reg_file[cntrl_regs[OPERAND_1]] = data_regs[REG_VAL_1];
+        const uint32_t addr = cntrl_regs[IMMEDIATE];
+        if (!addr_in_range(addr)) return false;
+
+        reg_file[cntrl_regs[OPERAND_1]] = static_cast<uint32_t>(prog_mem[addr]);
         return true;
     } catch (const exception&) {
         cerr << "Error in LDB" << endl;

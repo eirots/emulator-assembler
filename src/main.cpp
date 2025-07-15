@@ -21,7 +21,6 @@ int main(int argc, char** argv) {
 
     if (argc < 3) {
         mem_size = 131'072;
-
     } else {
         try {
             size_t pos = 0;
