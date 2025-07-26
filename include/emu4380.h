@@ -2,10 +2,12 @@
 #define emu4380_h_
 
 // contains function prototypes and declarations for structural elements of the processor
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 
@@ -13,14 +15,41 @@ using namespace std;
 
 // Global variables
 extern uint32_t* reg_file;
-
 extern unsigned char* prog_mem;  // default size is 131,072 elements/bytes
 
 extern uint32_t cntrl_regs[5];  // stores instruction operation, register operands, and immediate value
 extern uint32_t data_regs[2];   // stores register operand values retrieved from register file
 extern uint32_t mem_size;
+extern uint32_t mem_cycle_cntr;
 
 extern bool runBool;  // boolean for executing fetch, decode, execute
+extern bool cacheUsed;
+
+constexpr uint32_t BLOCK_SIZE = 16;
+constexpr uint32_t NUM_CACHE_LINES = 64;
+
+extern size_t associativity;
+extern size_t num_sets;
+extern uint32_t SET_BITS;
+extern uint32_t TAG_BITS;
+
+const uint32_t OFFSET_BITS = log2(BLOCK_SIZE);
+
+struct Line {
+    uint32_t tag = 0;
+    bool valid = false;
+    bool dirty = false;
+    uint8_t data[BLOCK_SIZE]{};
+    size_t lastused = 0;
+
+    void badline() noexcept {
+        valid = false;
+        dirty = false;
+        tag = 0;
+    }
+};
+
+extern Line** cache;
 
 // enums
 enum RegNames : std::size_t {
@@ -62,7 +91,12 @@ enum DataRegNames {
 };
 
 enum JumpOpcode : std::uint8_t {
-    OP_JMP = 0x01
+    OP_JMP = 0x01,  // 1
+    OP_JMR = 0x02,  // 2
+    OP_BNZ = 0x03,  // 3
+    OP_BGT = 0x04,  // 4
+    OP_BLT = 0x05,  // 5
+    OP_BRZ = 0x06   // 6
 };
 
 enum MoveOpcode : std::uint8_t {
@@ -72,7 +106,11 @@ enum MoveOpcode : std::uint8_t {
     OP_STR = 0x0A,   // 10
     OP_LDR = 0x0B,   // 11
     OP_STB = 0x0C,   // 12
-    OP_LDB = 0x0D    // 13
+    OP_LDB = 0x0D,   // 13
+    OP_ISTR = 0x0E,  // 14
+    OP_ILDR = 0x0F,  // 15
+    OP_ISTB = 0x10,  // 16
+    OP_ILDB = 0x11   // 17
 };
 
 enum ArithOpcode : std::uint8_t {
@@ -87,8 +125,31 @@ enum ArithOpcode : std::uint8_t {
     OP_DIVI = 0x1A   // 26
 };
 
+enum CompareOpcode : std::uint8_t {
+    OP_CMP = 0x1D,  // 29
+    OP_CMPI = 0x1E  // 30
+};
+
 enum TrapOpcode : std::uint8_t {
     OP_TRP = 0x1F
+};
+
+// used in `init_cache()` for determining which kind of cache to use.
+enum CacheType : std::uint32_t {
+    NO_CACHE = 0,
+    DIRECT_MAPPED = 1,
+    FULLY_ASSOCIATIVE = 2,
+    TWO_WAY_SET_ASSOCIATIVE = 3
+};
+
+extern CacheType current_cache_type;
+
+// used in cache functions `readWord()`, `readByte()`. `writeWord()`, and `writeByte()`.
+enum AccessType {
+    READBYTE,
+    READWORD,
+    WRITEBYTE,
+    WRITEWORD
 
 };
 
@@ -126,6 +187,16 @@ uint32_t load_binary(const char* filename);
 bool init_mem(unsigned int size);
 
 /**
+ *@brief Initializes the emulator's cache
+ *@details Must be called before memory access functions can be called.
+ */
+void init_cache(uint32_t cacheType);
+
+/**
+ * @brief frees the cache from memory
+ */
+void free_cache();
+/**
  * @brief First call to start the emulator, used heavily in testing
  * @return ints that you would expect from a main.
  */
@@ -133,14 +204,39 @@ int runEmulator(int argc, char** argv);
 
 //------------START OF OPERATION FUNCTIONS------------
 
-// jump instructions
+// -----------------jump functions-----------------
 
 /**
  * @brief Jump to address
  */
 bool JMP();
 
-// move instructions
+/**
+ * @brief Update PC to value in RS
+ */
+bool JMR();
+
+/**
+ * @brief Update PC to Address if RS != 0
+ */
+bool BNZ();
+
+/**
+ * @brief Update PC to Address if RS > 0
+ */
+bool BGT();
+
+/**
+ * @brief Update PC to Address if RS < 0
+ */
+bool BLT();
+
+/**
+ * @brief Update PC to Address if RS = 0
+ */
+bool BRZ();
+
+// -----------------move functions-----------------
 
 /**
  * @brief Move contents of RS to RD
@@ -191,7 +287,35 @@ bool STB();
  */
 bool LDB();
 
-// arithmetic functions
+/**
+ * @brief Store integer in RS at address in RG
+ * @details
+ * @return
+ */
+bool ISTR();
+
+/**
+ * @brief Load integer at address in RG into RD
+ * @details
+ * @return
+ */
+bool ILDR();
+
+/**
+ * @brief Store byte in RS at address in RG
+ * @details
+ * @return
+ */
+bool ISTB();
+
+/**
+ * @brief Load byte at address in RG into RD
+ * @details
+ * @return
+ */
+bool ILDB();
+
+// -----------------arithmetic functions-----------------
 /**
  * @brief Add RS1 to RS2, store result in RD
  * @details
@@ -246,7 +370,20 @@ bool SDIV();
  */
 bool DIVI();
 
-// trap/interrupt functions
+// -----------------comparison functions-----------------
+/**
+ * @brief  Performs a signed comparison between RS1 and RS2, and stores the result in RD
+ * @details Set RD = 0 if RS1 == RS2 OR set RD = 1 if RS1 >RS2 OR set RD = -1 if RS1 < RS2
+ */
+bool CMP();
+
+/**
+ * @brief  Performs a signed comparison between RS1 and IMM and stores the result in RD
+ * @details Set RD = 0 if RS1 == IMM OR set RD = 1 if RS1 >IMM OR set RD = -1 if RS1 < IMM
+ */
+bool CMPI();
+
+// -----------------trap/interrupt functions-----------------
 /**
  * @brief function for traps
  * @note based on immediate value
@@ -263,8 +400,45 @@ void STOP();
  * @brief Prints all register contents to stdout
  * @details Prints one register name and value per line. Register name is in all caps, followed by a tab character, followed by the integer value printed as an unsigned base 10 integer.
  */
+
+// -----------------Other helpers-----------------
 void dumpRegisterContents();
+void dumpCacheSummary();
 
 void invalidInstruction();
 
+//-----------------Timing functions-----------------
+/**
+ * @brief Returns the unsigned char located at index address in `prog_mem`.
+ * @details Also increments the global `mem_cycle_cntr` by 8 when called.
+ */
+unsigned char readByte(uint32_t address);
+
+/**
+ * @brief Returns the unsigned int located at index address in `prog_mem`.
+ * @details also increments the global `mem_cycle_cntr` by 8 when called.
+ */
+unsigned int readWord(uint32_t address);
+
+/**
+ * @brief Places the value in byte at index address in the `prog_mem` array.
+ * @details also increments the global `mem_cycle_counter` by 8 when called
+ */
+void writeByte(uint32_t address, unsigned char byte);
+
+/**
+ * @brief Places the value in `word`, beginning at index `address` in `prog_mem` array
+ * @details increments the global mem_cycle_cntr by 8 when called
+ */
+void writeWord(uint32_t address, unsigned int word);
+
+/**
+ * @brief Dumps the contents of the cache to console. Useful in debugging.
+ */
+void dumpCacheSummary();
+
+/**
+ * @brief dumps contents of memory to the console. Useful in debugging.
+ */
+void dumpMemory(const uint8_t* mem, size_t size);
 #endif

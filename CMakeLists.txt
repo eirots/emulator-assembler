@@ -61,7 +61,7 @@ target_link_libraries(runTests PRIVATE
 # Copy test asset beside the test executable
 add_custom_command(TARGET runTests POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${CMAKE_SOURCE_DIR}/test/testFiles/smalladd.bin
+          ${CMAKE_SOURCE_DIR}/test/assemblerTest/example.bin
           $<TARGET_FILE_DIR:runTests>)
 
 # ‘make check’ helper

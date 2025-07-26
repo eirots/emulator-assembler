@@ -11,43 +11,91 @@ using namespace std;
 
 // USAGE: first arg is mandatory, name of binary file containing 4380 byte code
 //           second arg is desired memory size (in bytes), positive integer with upper bound 4_294_967_295
+void printInvalidArgs(string str) {
+    cout
+        << "\nUsage: " << str << " [-m MEMORY] [-c CACHE] INPUT_BINARY_FILE\n\n"
+        << "Options:\n"
+        << "  -m <size>      Set reserved memory size (bytes).  \n"
+        << "                   Default: 131,072 bytes (128 KiB)\n"
+        << "  -c <config>    Cache configuration.  One of:\n"
+        << "\t\t    0 No Cache\n\t\t    1 Direct Mapped Cache\n\t\t    2 Fully Associative Cache\n\t\t    3 2-Way Set Associative Cache\n"
+        << "\n"
+        << "INPUT_BINARY_FILE:\n"
+        << "                   Path to 4380 bytecode binary.\n";
+}
+void printBadCacheConfig() {
+    cout << "Invalid cache configuration. Aborting.\n";
+}
+void printBadMem() {
+    cout << "Invalid memory configuaration. Aborting.\n";
+}
 int main(int argc, char** argv) {
     if (argc < 2) {
-        cout << "Usage: " << argv[0] << " INPUT_BINARY_FILE [RESERVED_MEMORY]\n";
-        cout << "INPUT_BINARY_FILE: \t\tPath to file containing 4380 byte code\n";
-        cout << "RESERVED_MEMORY (optional):\tPositive integer, default 131,072 bytes, max 4,294,967,295\n";
+        printInvalidArgs(argv[0]);
         return 1;
     }
 
-    if (argc < 3) {
-        mem_size = 131'072;
-    } else {
-        try {
-            size_t pos = 0;
-            unsigned long tmp = stoul(argv[2], &pos, 10);
+    uint32_t desired_memory = 131'072;
+    int cache_config = 0;
+    string input_file;
 
-            if (pos != strlen(argv[2]) ||
-                tmp > numeric_limits<uint32_t>::max()) {
-                throw std::out_of_range("Bad range, range is (0, 4,294,967,295]");
+    for (int i = 1; i < argc; ++i) {
+        string a = argv[i];
+        if (a == "-m") {
+            if (i + 1 == argc) {
+                printBadMem();
+                return 2;
             }
-            mem_size = static_cast<uint32_t>(tmp);
+            string val = argv[++i];
+            size_t pos;
+            uint64_t tmp = stoull(val, &pos);
+            if (pos != val.size() || tmp == 0 || tmp > UINT32_MAX) {
+                printBadMem();
+                return 2;
+            }
+            desired_memory = static_cast<uint32_t>(tmp);
 
-        } catch (const exception&) {
-            cerr << "Invalid memory size, range is (0, 4,294,967,295]" << endl;
+        } else if (a == "-c") {
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                string val = argv[++i];
+                if (val == "0")  // no cache
+                    cache_config = 0;
+                else if (val == "1")  // direct mapped
+                    cache_config = 1;
+                else if (val == "2")  // fully associative
+                    cache_config = 2;
+                else if (val == "3")  // 2-way set associative
+                    cache_config = 3;
+                else {
+                    printBadCacheConfig();
+                    return 2;
+                }
+            }
+
+        } else if (input_file.empty()) {
+            input_file = a;
+        } else {
+            printInvalidArgs(argv[0]);
             return 1;
         }
-
-        // cout << "memsize set to: " << mem_size << endl;
+    }
+    if (input_file.empty()) {
+        printInvalidArgs(argv[0]);
+        return 1;
     }
 
+    mem_size = desired_memory;
     if (!init_mem(mem_size)) return 1;
 
-    unsigned int binloadresult = load_binary(argv[1]);
-    if (binloadresult == 1) {
-        cerr << "Cannot open file: " << argv[1] << endl;
+    init_cache(cache_config);
+
+    unsigned int rc = load_binary(input_file.c_str());
+    if (rc == 1) {
+        cerr << "Cannot open file: " << input_file << "\n";
         return 1;
-    } else if (binloadresult == 2) {
-        cerr << "INSUFFICIENT MEMORY SPACE \n";
+    }
+    if (rc == 2) {
+        cerr << "INSUFFICIENT MEMORY SPACE\n";
         return 2;
     }
 
@@ -57,5 +105,9 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
+
+    // dumpCacheSummary();
+    free_cache();
+
     return 0;
 }

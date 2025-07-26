@@ -1,6 +1,52 @@
-# CS4380 Project 2 - 4380 Emulator Mark 1
+# CS4380 Project 3 - 4380 Emulator Mark 1
 ## INVOKING THE NON_LATE POLICY
 
+## Worklog (Project 3)
+|date | hours worked | what did I work on? | 
+|-----|--------------|---------------------|
+|7/11| 2h | Paper design, worked on designing `Line` structure and fully understanding how caches work.  |
+|7/12| 1h | Further paper design. Understood intuitively how caches are suppoesd to work. |
+|7/13| 0h | Weekend day. |
+|7/14| 2h | Started on implementing new instructions in assembler and emulator. Actually had a lot of fun doing this part.  |
+|7/15| 5h | Finished new instruction implementations, tested assembler.  |
+|7/16| 5h | Exploratory look refactoring emu4380 into a class to try and make cache I had designed easier to implement. Spoiler: was not worth it, basically a waste of devtime. Spent another 2 hours of this time undoing everything I had done and redesigning how I wanted the cache to interact inside the emulator. |
+|7/17| 4h | Created tests for new instruction behavior, found a bug that I was struggling to sort out. Memory was being mangled by the cache, issue was with new instructions. Started implementing my design of Lines and Cache |
+|7/18| 8h | Problems with lines and cache, created tons of new globals that were handled by the cache. Struggled with accurate memory cycles, misses weren't being counted. Known test results were not matching, tabled for today.  |
+|7/19| 5h | Cache is extremely broken, my efforts to fix it have turned it into a spaghetti code mess. Decided it is time to trash what I have, and try to salvage what I can from this horrible, horrible mess.  That will be done on Monday.|
+|7/20| 0h | Weekend day. |
+|7/21| 5h | Refactor of cache started, have a solid idea of where I want to go from here. |
+|7/22| 3h | Continuing with cache refactor, starting to come together. Tests were broken because I was calling global variables, fixed some of those today. |
+|7/23| 4h | Finished cache, added autodocs, changed assembler call in makefile to make testing easier. |
+|7/24| 7h | Big bug in cache that took way too long to figure out. Was right shifting somewhere instead of left shifiting, tests were showing mangled data but couldn't figure out why until I went through all code line-by-line. Fixed mangled data, ensured it was correct with new cache dump functions. |
+|7/25| 10h | Finished testing, found additional bugs through testing. Repaired those, created writeup for progs a - f. |
+
+_______________
+
+
+## How to use: 
+
+`make` 
+`make build` 
+-  Builds the Emulator inside of `build/bin`. Creates `build` folder if it doesn't exist. 
+-  Moves the Assembler and a test file into the `build` directory 
+
+`make test`
+- Runs `make build`
+- Compiles and runs emulator tests 
+
+`make emu_run` 
+- Runs `make build`
+- Runs emulator on example test file `prog_a.bin` with cache setting of 1 
+
+`make docs`
+- Generates autodocumentation 
+
+`make assemble FILE=[EXAMPLE_TEST_FILE_NAME.asm]`
+- Copies assembler file into `build` folder and executes assembler on `EXAMPLE_TEST_FILE_NAME.asm`
+
+`make clean`
+- Removes build folder and autodocs
+_______________
 ## Worklog (Project 2)
 | date | hours worked | what did I work on? | 
 |-----|--------------|---------------------|
@@ -26,6 +72,7 @@
 | 7/13 | weekend | weekend |
 | 7/14 | 5 h | Finished testing, cleaned up some bugs I missed, verified that functions work as they should.  |
 
+_______________
 
 ## Resubmission 1 Notes: 
 #### Root Causes:
