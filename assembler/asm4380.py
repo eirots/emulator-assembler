@@ -32,6 +32,11 @@ class Directive(Enum):
 
 class Mnemonic(IntEnum):
     JMP = 0x01
+    JMR = 0x02
+    BNZ = 0x03
+    BGT = 0x04
+    BLT = 0x05
+    BRZ = 0x06
     MOV = 0x07
     MOVI = 0x08
     LDA = 0x09
@@ -39,6 +44,10 @@ class Mnemonic(IntEnum):
     LDR = 0x0B
     STB = 0x0C
     LDB = 0x0D
+    ISTR = 0x0E
+    ILDR = 0x0F
+    ISTB = 0x10
+    ILDB = 0x11
     ADD = 0x12
     ADDI = 0x13
     SUB = 0x14
@@ -48,6 +57,8 @@ class Mnemonic(IntEnum):
     DIV = 0x18
     SDIV = 0x19
     DIVI = 0x1A
+    CMP = 0x1D
+    CMPI = 0x1E
     TRP = 0x1F
 
 
@@ -80,6 +91,11 @@ REG_MAP = {name: i for i, name in enumerate([
 
 VALID_OPS = {
         "JMP",
+        "JMR",
+        "BNZ",
+        "BGT",
+        "BLT",
+        "BRZ",
         "MOV",
         "MOVI",
         "LDA",
@@ -87,6 +103,10 @@ VALID_OPS = {
         "LDR",
         "STB",
         "LDB",
+        "ISTR",
+        "ILDR",
+        "ISTB",
+        "ILDB",
         "ADD",
         "ADDI",
         "SUB",
@@ -96,6 +116,8 @@ VALID_OPS = {
         "DIV",
         "SDIV",
         "DIVI",
+        "CMP",
+        "CMPI",
         "TRP"  
     }
 
@@ -149,7 +171,7 @@ class CharStream:
         
     def consume_white(self):
         ch = self.peek()
-        while ch in (" ", "\t"):
+        while ch in (" ", "\t", "\r"):
             self.next_char()
             ch = self.peek()
         return
@@ -221,6 +243,8 @@ class Parser:
         # DIRECTIVE -> [optional_label] <.directive> [optional_value] [optional_comment]
         # CODE      -> [optional_lable] <operator> <operand_list> [optional_comment]
         
+        if self.stream.eof():
+            return
         # if first character of a line is alphanumeric, then there's a label there. Alphanumeric chars in pos 0 on a line start are label beginnings 
         if self._is_alpha_numeric(): 
             # print(self.stream.peek())             
@@ -257,7 +281,7 @@ class Parser:
         
         # anything else is an invalid instruction
         
-        self._print_error()          
+        # self._print_error()          
     
     def _begin_code(self) -> None: 
         # Below is valid instruction format: 
@@ -515,6 +539,8 @@ class Parser:
     
     def _is_alpha_numeric(self) -> bool:
         ch = self.stream.peek()
+        if not ch: 
+            return False
         o = ord(ch)
 
         # hard coded alphanumeric range 
@@ -523,6 +549,8 @@ class Parser:
 
     def _is_label_char(self) -> bool:
         ch = self.stream.peek()
+        if not ch:
+            return False
         o = ord(ch)
 
         # hard coded alphanumeric, dollar sign, or underscore 
@@ -564,6 +592,11 @@ class Parser:
     def _assemble_entries(self) -> None:
         emit_handlers = {
         "JMP": self._emit_jmp,
+        "JMR": self._emit_jmr,
+        "BNZ": self._emit_bnz,
+        "BGT": self._emit_bgt,
+        "BLT": self._emit_blt,
+        "BRZ": self._emit_brz,
         "MOV": self._emit_mov,
         "MOVI":self._emit_movi,
         "LDA": self._emit_lda,
@@ -571,6 +604,10 @@ class Parser:
         "LDR": self._emit_ldr,
         "STB": self._emit_stb,
         "LDB": self._emit_ldb,
+        "ISTR": self._emit_istr,
+        "ILDR": self._emit_ildr,
+        "ISTB": self._emit_istb,
+        "ILDB": self._emit_ildb,
         "ADD": self._emit_add,
         "ADDI":self._emit_addi,
         "SUB": self._emit_sub,
@@ -580,11 +617,14 @@ class Parser:
         "DIV":self._emit_div,
         "SDIV":self._emit_sdiv,
         "DIVI":self._emit_divi,
+        "CMP": self._emit_cmp,
+        "CMPI": self._emit_cmpi,
         "TRP": self._emit_trp
     }
         
         for op, operands, addr in self.entries:
             handler = emit_handlers.get(op)
+           
             if not handler:
                 raise ValueError(f"No emitter for operation {op}")
             handler(operands, addr)
@@ -702,6 +742,53 @@ class Parser:
         self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)
         return
 
+    def _emit_jmr(self, operands, addr):
+        opcode = Mnemonic.JMR.value  # 
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RS  
+        operand_2 = 0  # DC 
+        operand_3 = 0  # DC 
+        imm = 0  #       DC  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+        return;
+
+    def _emit_bnz(self, operands, addr):
+        opcode = Mnemonic.BNZ.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RS  
+        operand_2 = 0  # DC 
+        operand_3 = 0  # DC 
+        imm = self._resolve_operand(operands[1], addr + 4)  # ADDR    
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+
+        return;
+
+    def _emit_bgt(self, operands, addr):
+        opcode = Mnemonic.BGT.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RS 
+        operand_2 = 0  # DC 
+        operand_3 = 0  # DC 
+        imm = self._resolve_operand(operands[1], addr + 4)  #       ADDR   
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+        return;
+
+    def _emit_blt(self, operands, addr):
+        opcode = Mnemonic.BLT.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RS 
+        operand_2 = 0  # DC 
+        operand_3 = 0  # DC 
+        imm = self._resolve_operand(operands[1], addr + 4)  #       ADDR   
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+
+        return;
+
+    def _emit_brz(self, operands, addr):
+        opcode = Mnemonic.BRZ.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RS 
+        operand_2 = 0  # DC 
+        operand_3 = 0  # DC  
+        imm = self._resolve_operand(operands[1], addr + 4)  #       ADDR 
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+        return;
+    
     def _emit_mov(self, operands, addr):
         opcode = Mnemonic.MOV.value
         operand_1 = self._resolve_operand(operands[0], addr + 1)  # RD
@@ -763,6 +850,46 @@ class Parser:
         operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
         imm = self._resolve_operand(operands[1], addr + 4)  
         self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_istr(self, operands, addr):
+        opcode = Mnemonic.ISTR.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RS  
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  # RG  
+        operand_3 = 0  # DC 
+        imm = 0  #      DC  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+
+        return
+
+    def _emit_ildr(self, operands, addr):
+        opcode = Mnemonic.ILDR.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RD  
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  # RG  
+        operand_3 = 0  # DC 
+        imm = 0  #      DC  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+
+        return
+
+    def _emit_istb(self, operands, addr):
+        opcode = Mnemonic.ISTB.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RS 
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  # RG 
+        operand_3 = 0  # DC 
+        imm = 0  #       DC  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+
+        return
+
+    def _emit_ildb(self, operands, addr):
+        opcode = Mnemonic.ILDB.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RD 
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  # RG 
+        operand_3 = 0  # DC 
+        imm = 0  #       DC  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+
         return
 
     def _emit_add(self, operands, addr):
@@ -844,6 +971,26 @@ class Parser:
         operand_3 = 0  # self._resolve_operand(operands[2], addr + 3) 
         imm = self._resolve_operand(operands[2], addr + 4)  
         self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
+        return
+
+    def _emit_cmp(self, operands, addr):
+        opcode = Mnemonic.CMP.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RD 
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  # RS1 
+        operand_3 = self._resolve_operand(operands[2], addr + 3)  # RS2  
+        imm = 0  #       DC  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+
+        return
+
+    def _emit_cmpi(self, operands, addr):
+        opcode = Mnemonic.CMPI.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  # RD  
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  # RS1 
+        operand_3 = 0  # DC  
+        imm = self._resolve_operand(operands[2], addr + 4)  #      IMM  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+
         return
 
     def _emit_trp(self, operands, addr):

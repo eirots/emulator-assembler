@@ -1,0 +1,13 @@
+        movi    r9, #10000
+        movi    r8, #1
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        sub     r9, r9, r8
+        trp     #0
