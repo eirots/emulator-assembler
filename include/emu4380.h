@@ -125,13 +125,34 @@ enum ArithOpcode : std::uint8_t {
     OP_DIVI = 0x1A   // 26
 };
 
+// LOGICAL AND and OR, not bitwise.
+enum LogicalOpcode : std::uint8_t {
+    OP_AND = 0x1B,  // 27
+    OP_OR = 0x1C    // 28
+};
+
 enum CompareOpcode : std::uint8_t {
     OP_CMP = 0x1D,  // 29
     OP_CMPI = 0x1E  // 30
 };
 
 enum TrapOpcode : std::uint8_t {
-    OP_TRP = 0x1F
+    OP_TRP = 0x1F  // 31
+};
+
+enum HeapOpcode : std::uint8_t {
+    OP_ALCI = 0x20,  // 32
+    OP_ALLC = 0x21,  // 33
+    OP_IALLC = 0x22  // 34
+};
+
+enum StackOpcode : std::uint8_t {
+    OP_PSHR = 0x23,  // 35
+    OP_PSHB = 0x24,  // 36
+    OP_POPR = 0x25,  // 37
+    OP_POPB = 0x26,  // 38
+    OP_CALL = 0x27,  // 39
+    OP_RET = 0x28    // 40
 };
 
 // used in `init_cache()` for determining which kind of cache to use.
@@ -370,6 +391,18 @@ bool SDIV();
  */
 bool DIVI();
 
+/**
+ * @brief Performs a LOGICAL AND (&&) between RS1 and RS2, stores the result in RD.
+ * @details 1 = True, 0 = False
+ */
+bool AND();
+
+/**
+ * @brief Performs a LOGICAL OR (||) between RS1 and RS2, stores the result in RD.
+ * @details 1 = True, 0 = False
+ */
+bool OR();
+
 // -----------------comparison functions-----------------
 /**
  * @brief  Performs a signed comparison between RS1 and RS2, and stores the result in RD
@@ -389,6 +422,54 @@ bool CMPI();
  * @note based on immediate value
  */
 bool TRP();
+
+/**
+ * @brief Allocate imm bytes of space on the heap, and increment HP accordingly.
+ * @details The imm value is a 4-byte unsigned integ3er. Store the initial heap pointer in RD.
+ */
+bool ALCI();
+
+/**
+ * @brief Allocate a number of bytes on the heap according to the value of the 4-byte unsigned integer stored at address
+ * @details Also increment HP accordingly. Store the initial heap pointer in RD
+ */
+bool ALLC();
+
+/**
+ * @brief Indirectly allocate a number of bytes on the heap according to the value of the 4-byte uint at memory address stored in RS1.
+ * @details Increments HP accordingly. Store the initial heap pointer in RD.
+ */
+bool IALLC();
+
+/**
+ * @brief Set SP = SP - 4, place the word in RS onto the stack
+ */
+bool PSHR();
+
+/**
+ * @brief Set SP = SP - 1, place the least significant byte in RS onto the stack
+ */
+bool PSHB();
+
+/**
+ * @brief place the word on top of the stack into RD, update SP = SP + 4
+ */
+bool POPR();
+
+/**
+ * @brief place the byte on top of the stack into RD, update SP = SP + 1
+ */
+bool POPB();
+
+/**
+ * @brief Push PC onto stack, update PC to Address
+ */
+bool CALL();
+
+/**
+ * @brief pop stack into PC
+ */
+bool RET();
 
 /**
  * @brief executes the stop routine

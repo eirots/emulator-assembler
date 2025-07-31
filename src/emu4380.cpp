@@ -755,6 +755,14 @@ bool decode() {
             return true;
         }
 
+        case OP_AND: {
+            // TODO:
+        }
+
+        case OP_OR: {
+            // TODO:
+        }
+
         case OP_CMP: {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t rs1 = cntrl_regs[OPERAND_2];
@@ -790,9 +798,45 @@ bool decode() {
             else
                 return false;
         }
+
+        case OP_ALCI: {
+            // TODO:
+        }
+
+        case OP_ALLC: {
+            // TODO:
+        }
+
+        case OP_IALLC: {
+            // TODO:
+        }
+
+        case OP_PSHR: {
+            // TODO:
+        }
+
+        case OP_PSHB: {
+            // TODO:
+        }
+
+        case OP_POPR: {
+            // TODO:
+        }
+
+        case OP_POPB: {
+            // TODO:
+        }
+
+        case OP_CALL: {
+            // TODO:
+        }
+
+        case OP_RET: {
+            // TODO:
+        }
     }
 
-    return false;
+    return false;  // something went wrong, or a malformed instruction or SOMETHING happend. Return false, emulator errors instead of crashing.
 }
 
 bool execute() {
@@ -853,6 +897,10 @@ bool execute() {
             return SDIV();
         case OP_DIVI:
             return DIVI();
+        case OP_AND:
+            return AND();
+        case OP_OR:
+            return OR();
         case OP_CMP:
             return CMP();
         case OP_CMPI:
@@ -1428,6 +1476,16 @@ bool DIVI() {
     return true;
 }
 
+bool AND() {
+    // TODO:
+    return false;
+}
+
+bool OR() {
+    // TODO:
+    return false;
+}
+
 // compare execution functions
 bool CMP() {
     // Performs a signed comparison between RS1 and RS2, and stores the result in RD
@@ -1541,6 +1599,15 @@ bool TRP() {
             reg_file[R3] = static_cast<uint32_t>(inChar);
             return true;
         }
+        case 5: {
+            // TODO: Write the null-terminated pascal-stlye string whose starting address is in r3 to stdout
+            return false;
+        }
+        case 6: {
+            // TODO: Read a newline terminated string from stdin and store it in memory as a null-terminated pascal-style string whose starting
+            // address is in R3. Do NOT store the newline.
+            return false;
+        }
         case 98: {
             try {
                 dumpRegisterContents();
@@ -1559,12 +1626,56 @@ bool TRP() {
     // IMM 0    -> EXECUTE STOP / EXIT ROUTINE
 }
 
-//------------------ END OF EXECUTE HELPER FUNCTIONS ------------------
+bool ALCI() {
+    // TODO:
+    return false;
+}
+
+bool ALLC() {
+    // TODO:
+    return false;
+}
+
+bool IALLC() {
+    // TODO:
+    return false;
+}
+
+bool PSHR() {
+    // TODO:
+    return false;
+}
+
+bool PSHB() {
+    // TODO:
+    return false;
+}
+
+bool POPR() {
+    // TODO:
+    return false;
+}
+
+bool POPB() {
+    // TODO:
+    return false;
+}
+
+bool CALL() {
+    // TODO:
+    return false;
+}
+
+bool RET() {
+    // TODO:
+    return false;
+}
 
 void STOP() {
     runBool = false;
     return;
 }
+//------------------ END OF EXECUTE HELPER FUNCTIONS ------------------
 
 // Prints one register name and value per line. Register name is in all caps, followed by a tab character, followed by the integer value printed as an unsigned base 10 integer.
 void dumpRegisterContents() {

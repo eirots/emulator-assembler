@@ -1,5 +1,11 @@
-# CS4380 Project 3 - 4380 Emulator Mark 1
-## INVOKING THE NON_LATE POLICY
+# CS4380 Project 4 - 4380 Emulator Mark 1
+
+
+## Worklog (Project 4)
+|date | hours worked | what did I work on? | 
+|-----|--------------|---------------------|
+|7/30 | 8h         | Started adding mew instructions and directives to assembler, added prototypes for new instructions to emulator. Emulator will be really easy to implement, but I'll do that once I'm finished with the assembler. Also fixed a bug with int directives|
+
 
 ## Worklog (Project 3)
 |date | hours worked | what did I work on? | 
@@ -28,24 +34,28 @@ _______________
 `make` 
 `make build` 
 -  Builds the Emulator inside of `build/bin`. Creates `build` folder if it doesn't exist. 
--  Moves the Assembler and a test file into the `build` directory 
+-  Moves the Assembler and a test file into the `build` directory.
 
 `make test`
-- Runs `make build`
-- Compiles and runs emulator tests 
+- Runs `make build`.
+- Compiles and runs emulator tests. 
 
 `make emu_run` 
 - Runs `make build`
-- Runs emulator on example test file `prog_a.bin` with cache setting of 1 
+- Runs emulator on example test file `prog_a.bin` with cache setting of 1. 
 
 `make docs`
-- Generates autodocumentation 
+- Generates autodocumentation.
 
 `make assemble FILE=[EXAMPLE_TEST_FILE_NAME.asm]`
-- Copies assembler file into `build` folder and executes assembler on `EXAMPLE_TEST_FILE_NAME.asm`
+- Copies assembler file into `build` folder and executes assembler on `EXAMPLE_TEST_FILE_NAME.asm`.
+
+`make asm_test`
+- Runs assembler tests. 
+- NOTE: This command requires `pytest` to be installed. 
 
 `make clean`
-- Removes build folder and autodocs
+- Removes build folder and autodocs.
 _______________
 ## Worklog (Project 2)
 | date | hours worked | what did I work on? | 

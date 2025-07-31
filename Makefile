@@ -47,6 +47,9 @@ assemble:
 	@cp $(ASM_SRC) $(BUILD_DIR)/
 	@echo "Assembling $(notdir $(ASM_SRC)) → $(notdir $(ASM_SRC:.asm=.bin))"
 	@python3 $(BUILD_DIR)/asm4380.py $(BUILD_DIR)/$(notdir $(ASM_SRC))
+
+asm_test:
+	@pytest -v
 # ------------------------------------------------------------------
 # Assemble + run example in one go
 # ------------------------------------------------------------------
