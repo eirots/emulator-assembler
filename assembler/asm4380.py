@@ -641,8 +641,29 @@ class Assembler:
         # Required numeric literal. 255 max val of numeric literal 
         # Allocates a number of bytes equal to the numeric literal + 2. The first byte is initalized to the value of the numeric literal and the remaining bytes are initialized to zeros. 
         # TODO:
-        # YOU WERE LAST WORKING HERE 
         
+        sb = []
+        while True:
+            ch = self.stream.peek()
+            if ch.isnumeric():
+                sb.append(ch)
+                self.stream.next_char()
+            elif not ch.isnumeric():
+                break
+            else:
+                return self._print_error()
+                
+        toreserve = int("".join(sb))
+        
+        if(toreserve > 255):
+            self._print_error()  # broke max value rule 
+        
+        start = len(self.data_bytes)
+        total = toreserve + 2
+        
+        self._store_number_in_byte_list(0, total)
+        self.data_bytes[start] = toreserve
+                    
         return
 
     def _directive_done(self):

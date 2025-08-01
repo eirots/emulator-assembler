@@ -46,6 +46,7 @@ _______________
 
 `make docs`
 - Generates autodocumentation.
+- NOTE: This requires `doxygen` to be installed 
 
 `make assemble FILE=[EXAMPLE_TEST_FILE_NAME.asm]`
 - Copies assembler file into `build` folder and executes assembler on `EXAMPLE_TEST_FILE_NAME.asm`.

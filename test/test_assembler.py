@@ -192,7 +192,7 @@ class TestEmitters(unittest.TestCase):
         symboltable = drv.parser.symbol_table
         self.assertEqual(symboltable.get("labelhere"), 4)
         
-    def test_str_without_labels(self):
+    def test_str_string_without_labels(self):
         src = '\t.STR "beavis and butthead"'
         drv = StringDriver(src)
         out = drv.assemble_to_bytes()
@@ -204,7 +204,7 @@ class TestEmitters(unittest.TestCase):
         expected = ([len(s)] + [ord(c) for c in s] + [0])
         self.assertEqual(list(out[4:]), expected)
 
-    def test_str_with_label(self):
+    def test_str_string_with_label(self):
         src = 'beavis\t.STR\t"beavis and butthead"'
         drv = StringDriver(src)
         out = drv.assemble_to_bytes()
@@ -215,6 +215,37 @@ class TestEmitters(unittest.TestCase):
         
         expected = ([len(s)] + [ord(c) for c in s] + [0])
         self.assertEqual(list(out[4:]), expected)
+        st = drv.parser.symbol_table
+        self.assertEqual(st.get("beavis"), 4)
+        
+    def test_str_with_numeric_no_label(self):
+        src = "\t.STR\t#4\n"
+        drv = StringDriver(src)
+        out = drv.assemble_to_bytes()
+        
+        self.assertEqual(len(out), 4 + 4 + 2)  # fed numeric of 4, plus 4 padding for location of first address, plus the additional 2 bytes needed 
+        expected = (bytearray(10))
+        expected[4] = 0x04
+        
+        self.assertEqual(out, expected) 
+        
+    def test_str_too_large_number(self):
+        src = "\t.STR\t#256\n"  # oob
+        drv = StringDriver(src)
+        
+        with self.assertRaises(SystemExit) as cm:
+            out = drv.assemble_to_bytes()
+        self.assertEqual(cm.exception.code, 2)
+            
+    def test_str_numeric_with_label(self):
+        src = "beavis\t.STR\t#4"
+        drv = StringDriver(src)
+        out = drv.assemble_to_bytes()
+        
+        self.assertEqual(len(out), 4 + 4 + 2)  # fed numeric of 4, plus 4 padding for location of first address, plus the additional 2 bytes needed 
+        expected = (bytearray(10))
+        expected[4] = 0x04
+        
         st = drv.parser.symbol_table
         self.assertEqual(st.get("beavis"), 4)
 
