@@ -2,6 +2,8 @@
 #define emu4380_h_
 
 // contains function prototypes and declarations for structural elements of the processor
+
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -49,7 +51,70 @@ struct Line {
     }
 };
 
+/**
+ * struct PointerStack {
+    /* Linked-list pushdown stack adapted from the following textbook:
+     * Title: Algorithms
+     * Author: Robert Sedgewick and Kevin Wayne
+     * Edition: 4th ed.
+     * Publisher: Addison-Wesley
+     * Publication Year: 2011
+     * Relevant Pages: 149 (for specific concepts/algorithms used in this structure)
+     *
+   private:
+    struct Node {
+        uintptr_t item;
+        Node* next;
+    };
+
+    Node* first;
+    uint64_t n;  // number of items
+
+   public:
+    PointerStack() {
+        Node* first{nullptr};
+        uint64_t n{0};
+    }
+    ~PointerStack() {
+        while (first) {
+            Node* tmp = first;
+            first = first->next;
+            delete tmp;
+        }
+    }
+
+    bool isEmpty() { return first == nullptr; }
+    uint64_t size() { return n; }
+
+    void push(uintptr_t item) {
+        Node* oldfirst = first;
+        first = new Node();
+        first->item = item;
+        first->next = oldfirst;
+        n++;
+        return;
+    }
+
+    uintptr_t pop() {
+        assert(!isEmpty());
+        Node* tmp = first;
+        uintptr_t val = tmp->item;
+        first = first->next;
+        delete tmp;
+        n--;
+        return val;
+    }
+
+    uintptr_t top() {
+        assert(!isEmpty());
+        return first->item;
+    }
+};
+ */
+
 extern Line** cache;
+// extern uint8_t* callstack;
+//  extern PointerStack stack;
 
 // enums
 enum RegNames : std::size_t {
