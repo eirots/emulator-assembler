@@ -161,37 +161,37 @@ enum DataRegNames {
 };
 
 enum Opcode : std::uint8_t {
-    OP_JMP = 0x01,    // 1
-    OP_JMR = 0x02,    // 2
-    OP_BNZ = 0x03,    // 3
-    OP_BGT = 0x04,    // 4
-    OP_BLT = 0x05,    // 5
-    OP_BRZ = 0x06,    // 6
-    OP_MOV = 0x07,    // 7
-    OP_MOVI = 0x08,   // 8
-    OP_LDA = 0x09,    // 9
-    OP_STR = 0x0A,    // 10
-    OP_LDR = 0x0B,    // 11
-    OP_STB = 0x0C,    // 12
-    OP_LDB = 0x0D,    // 13
+    OP_JMP  = 0x01,    // 1
+    OP_JMR  = 0x02,    // 2
+    OP_BNZ  = 0x03,    // 3
+    OP_BGT  = 0x04,    // 4
+    OP_BLT  = 0x05,    // 5
+    OP_BRZ  = 0x06,    // 6
+    OP_MOV  = 0x07,    // 7
+    OP_MOVI  = 0x08,   // 8
+    OP_LDA  = 0x09,    // 9
+    OP_STR  = 0x0A,    // 10
+    OP_LDR  = 0x0B,    // 11
+    OP_STB  = 0x0C,    // 12
+    OP_LDB  = 0x0D,    // 13
     OP_ISTR = 0x0E,   // 14
     OP_ILDR = 0x0F,   // 15
     OP_ISTB = 0x10,   // 16
     OP_ILDB = 0x11,   // 17
-    OP_ADD = 0x12,    // 18
+    OP_ADD  = 0x12,    // 18
     OP_ADDI = 0x13,   // 19
-    OP_SUB = 0x14,    // 20
+    OP_SUB  = 0x14,    // 20
     OP_SUBI = 0x15,   // 21
-    OP_MUL = 0x16,    // 22
+    OP_MUL  = 0x16,    // 22
     OP_MULI = 0x17,   // 23
-    OP_DIV = 0x18,    // 24
+    OP_DIV  = 0x18,    // 24
     OP_SDIV = 0x19,   // 25
     OP_DIVI = 0x1A,   // 26
-    OP_AND = 0x1B,    // 27
-    OP_OR = 0x1C,     // 28
-    OP_CMP = 0x1D,    // 29
+    OP_AND  = 0x1B,    // 27
+    OP_OR   = 0x1C,     // 28
+    OP_CMP  = 0x1D,    // 29
     OP_CMPI = 0x1E,   // 30
-    OP_TRP = 0x1F,    // 31
+    OP_TRP  = 0x1F,    // 31
     OP_ALCI = 0x20,   // 32
     OP_ALLC = 0x21,   // 33
     OP_IALLC = 0x22,  // 34
@@ -200,7 +200,7 @@ enum Opcode : std::uint8_t {
     OP_POPR = 0x25,   // 37
     OP_POPB = 0x26,   // 38
     OP_CALL = 0x27,   // 39
-    OP_RET = 0x28     // 40
+    OP_RET  = 0x28     // 40
 };
 
 /*

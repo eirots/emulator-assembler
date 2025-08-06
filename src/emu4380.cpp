@@ -41,6 +41,7 @@ size_t num_sets = -1;       // set index is log2(#sets)
 Line** cache = nullptr;
 
 uint64_t lineCounter = 0;
+uint64_t STARTPOINT = 0;
 
 constexpr const char* REG_NAMES[NUM_REGS] = {
     "R0",
@@ -422,6 +423,7 @@ uint32_t load_binary(const char* filename) {
     reg_file[SP] = mem_size;   // project 4 req 3
     reg_file[SL] = file_size;  // project 4 req 4
     reg_file[PC] = entry;
+    STARTPOINT = entry;
     return 0;
 }
 
@@ -532,7 +534,7 @@ bool fetch() {
     reg_file[PC] += 4;
 
     if (!cacheUsed) fetching_second = false;
-    lineCounter++;
+    lineCounter = reg_file[PC] - STARTPOINT;
 
     // cout << "Opcode: " << static_cast<Opcode>(cntrl_regs[OPERATION]) << " oprnd 1: " << cntrl_regs[OPERAND_1] << " oprnd 2: " << cntrl_regs[OPERAND_2] << " oprnd 3: " << cntrl_regs[OPERAND_3] << " immediate: " << cntrl_regs[IMMEDIATE] << endl;
     return true;
@@ -2048,7 +2050,7 @@ bool POPB() {
 bool CALL() {
     // Push PC onto stack, update PC to address
     try {
-        uint32_t returnPC = reg_file[PC] + 8;
+        uint32_t returnPC = reg_file[PC];
 
         uint32_t newSP = reg_file[SP] - sizeof(uint32_t);
 
@@ -2136,6 +2138,7 @@ void dumpRegisterContents() {
     for (size_t i = 0; i < NUM_REGS; i++) {
         cout << REG_NAMES[i] << "\t" << static_cast<uint32_t>(reg_file[i]) << endl;
     }
+    cout << endl;
     return;
 }
 
@@ -2263,9 +2266,13 @@ void dumpCacheSummary() {
 }
 
 void invalidInstruction() {
+    uint32_t pc_addr = reg_file[PC] - 8;
+    uint32_t instr_offset = pc_addr - STARTPOINT;
+    uint32_t line_num = instr_offset / 8 + 1;
     dumpRegisterContents();
     // dumpCacheVerbose();
     //  dumpMemory(prog_mem, mem_size);
-    cout << "INVALID INSTRUCTION AT LINE: " << (lineCounter) << endl;
+    cout << "INVALID INSTRUCTION AT LINE: " << line_num << endl;
+
     exit(1);
 }
