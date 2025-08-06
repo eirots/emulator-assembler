@@ -567,8 +567,8 @@ class Assembler:
     def _str_directive(self):
         
         self.stream.consume_white()
-        print("right here, line below, we're looking at ")
-        print(self.stream.peek())
+        # print("right here, line below, we're looking at ")
+        # print(self.stream.peek())
         
         if self.stream.peek() != '\"' and self.stream.peek() != "#":
             return self._print_error()
@@ -583,7 +583,7 @@ class Assembler:
         return
     
     def _parse_str_string(self):
-        # TODO:  
+
         ESCAPES = {
             't': "\t",
             '\\': '\\',

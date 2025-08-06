@@ -117,8 +117,13 @@ extern Line** cache;
 //  extern PointerStack stack;
 
 // enums
+
 enum RegNames : std::size_t {
-    R0 = 0,  // general purpose registers
+    /**
+     * WHEN USING THIS EMULATOR
+     *          Best practice, Use registers R0-R7 as caller registers, and R8-R15 for the callee.
+     */
+    R0 = 0,  // general purpose registers, R0-R7 are for function callers.
     R1 = 1,
     R2 = 2,
     R3 = 3,
@@ -126,7 +131,7 @@ enum RegNames : std::size_t {
     R5 = 5,
     R6 = 6,
     R7 = 7,
-    R8 = 8,
+    R8 = 8,  // General purpose regsiters, R8-R15 are for function callees.
     R9 = 9,
     R10 = 10,
     R11 = 11,
@@ -155,6 +160,50 @@ enum DataRegNames {
     REG_VAL_2 = 1
 };
 
+enum Opcode : std::uint8_t {
+    OP_JMP = 0x01,    // 1
+    OP_JMR = 0x02,    // 2
+    OP_BNZ = 0x03,    // 3
+    OP_BGT = 0x04,    // 4
+    OP_BLT = 0x05,    // 5
+    OP_BRZ = 0x06,    // 6
+    OP_MOV = 0x07,    // 7
+    OP_MOVI = 0x08,   // 8
+    OP_LDA = 0x09,    // 9
+    OP_STR = 0x0A,    // 10
+    OP_LDR = 0x0B,    // 11
+    OP_STB = 0x0C,    // 12
+    OP_LDB = 0x0D,    // 13
+    OP_ISTR = 0x0E,   // 14
+    OP_ILDR = 0x0F,   // 15
+    OP_ISTB = 0x10,   // 16
+    OP_ILDB = 0x11,   // 17
+    OP_ADD = 0x12,    // 18
+    OP_ADDI = 0x13,   // 19
+    OP_SUB = 0x14,    // 20
+    OP_SUBI = 0x15,   // 21
+    OP_MUL = 0x16,    // 22
+    OP_MULI = 0x17,   // 23
+    OP_DIV = 0x18,    // 24
+    OP_SDIV = 0x19,   // 25
+    OP_DIVI = 0x1A,   // 26
+    OP_AND = 0x1B,    // 27
+    OP_OR = 0x1C,     // 28
+    OP_CMP = 0x1D,    // 29
+    OP_CMPI = 0x1E,   // 30
+    OP_TRP = 0x1F,    // 31
+    OP_ALCI = 0x20,   // 32
+    OP_ALLC = 0x21,   // 33
+    OP_IALLC = 0x22,  // 34
+    OP_PSHR = 0x23,   // 35
+    OP_PSHB = 0x24,   // 36
+    OP_POPR = 0x25,   // 37
+    OP_POPB = 0x26,   // 38
+    OP_CALL = 0x27,   // 39
+    OP_RET = 0x28     // 40
+};
+
+/*
 enum JumpOpcode : std::uint8_t {
     OP_JMP = 0x01,  // 1
     OP_JMR = 0x02,  // 2
@@ -163,7 +212,6 @@ enum JumpOpcode : std::uint8_t {
     OP_BLT = 0x05,  // 5
     OP_BRZ = 0x06   // 6
 };
-
 enum MoveOpcode : std::uint8_t {
     OP_MOV = 0x07,   // 7
     OP_MOVI = 0x08,  // 8
@@ -177,7 +225,6 @@ enum MoveOpcode : std::uint8_t {
     OP_ISTB = 0x10,  // 16
     OP_ILDB = 0x11   // 17
 };
-
 enum ArithOpcode : std::uint8_t {
     OP_ADD = 0x12,   // 18
     OP_ADDI = 0x13,  // 19
@@ -218,7 +265,7 @@ enum StackOpcode : std::uint8_t {
     OP_POPB = 0x26,  // 38
     OP_CALL = 0x27,  // 39
     OP_RET = 0x28    // 40
-};
+}; */
 
 // used in `init_cache()` for determining which kind of cache to use.
 enum CacheType : std::uint32_t {
@@ -485,12 +532,13 @@ bool CMPI();
 /**
  * @brief function for traps
  * @note based on immediate value
+ * @details Trp 0 ends program and outputs number of memory cycles. \n TRP 1 Writes an int in r3 to stdout. \n TRP2 Read an integer into r3 from stdout \n TRP3 Write character in R3 to stdout \n TRP4 Read a char into R3 from stdin \n TRP5 Writes the full null-terminated pascal-style string whose starting address is in R3 to stdout \n TRP6 Read a newline terminated string from stdin and stores it in memory as a null-terminated pascal-style string whose starting address is in R3.
  */
 bool TRP();
 
 /**
  * @brief Allocate imm bytes of space on the heap, and increment HP accordingly.
- * @details The imm value is a 4-byte unsigned integ3er. Store the initial heap pointer in RD.
+ * @details The imm value is a 4-byte unsigned integer. Store the initial heap pointer in RD.
  */
 bool ALCI();
 

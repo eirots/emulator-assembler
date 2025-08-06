@@ -40,6 +40,8 @@ size_t num_sets = -1;       // set index is log2(#sets)
 
 Line** cache = nullptr;
 
+uint64_t lineCounter = 0;
+
 constexpr const char* REG_NAMES[NUM_REGS] = {
     "R0",
     "R1",
@@ -64,6 +66,93 @@ constexpr const char* REG_NAMES[NUM_REGS] = {
     "FP",
     "HP"};
 
+ostream& operator<<(ostream& os, Opcode op) {
+    switch (op) {
+        case OP_JMP:
+            return os << "OP_JMP  ";
+        case OP_JMR:
+            return os << "OP_JMR  ";
+        case OP_BNZ:
+            return os << "OP_BNZ  ";
+        case OP_BGT:
+            return os << "OP_BGT  ";
+        case OP_BLT:
+            return os << "OP_BLT  ";
+        case OP_BRZ:
+            return os << "OP_BRZ  ";
+        case OP_MOV:
+            return os << "OP_MOV  ";
+        case OP_MOVI:
+            return os << "OP_MOVI ";
+        case OP_LDA:
+            return os << "OP_LDA  ";
+        case OP_STR:
+            return os << "OP_STR  ";
+        case OP_LDR:
+            return os << "OP_LDR  ";
+        case OP_STB:
+            return os << "OP_STB  ";
+        case OP_LDB:
+            return os << "OP_LDB  ";
+        case OP_ISTR:
+            return os << "OP_ISTR ";
+        case OP_ILDR:
+            return os << "OP_ILDR ";
+        case OP_ISTB:
+            return os << "OP_ISTB ";
+        case OP_ILDB:
+            return os << "OP_ILDB ";
+        case OP_ADD:
+            return os << "OP_ADD  ";
+        case OP_ADDI:
+            return os << "OP_ADDI ";
+        case OP_SUB:
+            return os << "OP_SUB  ";
+        case OP_SUBI:
+            return os << "OP_SUBI ";
+        case OP_MUL:
+            return os << "OP_MUL  ";
+        case OP_MULI:
+            return os << "OP_MULI ";
+        case OP_DIV:
+            return os << "OP_DIV  ";
+        case OP_SDIV:
+            return os << "OP_SDIV ";
+        case OP_DIVI:
+            return os << "OP_DIVI ";
+        case OP_AND:
+            return os << "OP_AND  ";
+        case OP_OR:
+            return os << "OP_OR   ";
+        case OP_CMP:
+            return os << "OP_CMP  ";
+        case OP_CMPI:
+            return os << "OP_CMPI ";
+        case OP_TRP:
+            return os << "OP_TRP  ";
+        case OP_ALCI:
+            return os << "OP_ALCI ";
+        case OP_ALLC:
+            return os << "OP_ALLC ";
+        case OP_IALLC:
+            return os << "OP_IALLC";
+        case OP_PSHR:
+            return os << "OP_PSHR ";
+        case OP_PSHB:
+            return os << "OP_PSHB ";
+        case OP_POPR:
+            return os << "OP_POPR ";
+        case OP_POPB:
+            return os << "OP_POPB ";
+        case OP_CALL:
+            return os << "OP_CALL ";
+        case OP_RET:
+            return os << "OP_RET  ";
+        default:
+            return os << "op_unknown";
+    }
+}
+
 //-------------MEMORY VALIDATION FUNCTIONS -------------
 // validate any valid register
 bool is_valid_rg(uint32_t r) {
@@ -71,7 +160,7 @@ bool is_valid_rg(uint32_t r) {
 }
 // validates general purpose register
 bool igr(uint32_t r) {
-    return is_valid_rg(r) && (r >= R0 && r < PC);
+    return is_valid_rg(r) && (r >= R0 && r < HP);
     //  return r >= 16 && r <= 21
 }
 // validates if its a state register
@@ -154,6 +243,9 @@ void handleCacheMiss(uint32_t address,
     //      << "\t" << "outWord:" << outWord << "\n"
     //      << "\t" << "writeByte:" << writeByte << "\n"
     //      << "\t" << "writeWord:" << writeWord << "\n";
+
+    std::cout << "MISS on 0x" << std::hex << address
+              << " → set " << std::dec << setidx << "\n";
 
     constexpr int WORDS_PER_BLOCK = BLOCK_SIZE / 4;
 
@@ -273,6 +365,7 @@ void writeByte(uint32_t address, unsigned char byte) {
     } else {
         mem_cycle_cntr += 8;
         if (!addr_in_range(address)) {
+            cout << "Address not in range" << endl;
             // noop
             return;
         }
@@ -287,6 +380,11 @@ void writeWord(uint32_t address, unsigned int word) {
         checkCache(address, WRITEWORD, dummyvar, 0, word);
 
     } else {
+        if (address + sizeof(word) > mem_size) {
+            cerr << "[writeWord] OUT OF BOUNDS: addr=" << address
+                 << " prog_mem_size=" << mem_size << "\n";
+            std::abort();
+        }
         mem_cycle_cntr += 8;
         if (!addr_in_range(address, 4)) {
             // noop
@@ -434,7 +532,9 @@ bool fetch() {
     reg_file[PC] += 4;
 
     if (!cacheUsed) fetching_second = false;
+    lineCounter++;
 
+    // cout << "Opcode: " << static_cast<Opcode>(cntrl_regs[OPERATION]) << " oprnd 1: " << cntrl_regs[OPERAND_1] << " oprnd 2: " << cntrl_regs[OPERAND_2] << " oprnd 3: " << cntrl_regs[OPERAND_3] << " immediate: " << cntrl_regs[IMMEDIATE] << endl;
     return true;
 }
 
@@ -518,8 +618,8 @@ bool decode() {
             const uint32_t rd = cntrl_regs[OPERAND_1];
             const uint32_t rs = cntrl_regs[OPERAND_2];
 
-            if (!is_valid_rg(rd)) return false;
-            if (!is_valid_rg(rs)) return false;
+            if (!igr(rd)) return false;
+            if (!igr(rs)) return false;
 
             data_regs[REG_VAL_1] = reg_file[rs];
             return true;
@@ -1698,7 +1798,7 @@ bool TRP() {
             // dumpCacheSummary();
             // dumpRegisterContents();
             // dumpMemory(prog_mem, mem_size);
-            runBool = false;
+            STOP();
             return true;
         }
         // write int in r3 to stdout (console)
@@ -1725,17 +1825,19 @@ bool TRP() {
             reg_file[R3] = static_cast<uint32_t>(inChar);
             return true;
         }
+        // Write the full null-terminated pascal-style string whose starting address is in r3 to stdout
         case 5: {
             try {
                 uint32_t addr = reg_file[R3];
-                uint32_t length = readByte(addr);
+                uint8_t length = readByte(addr);
 
-                for (int i = 1; i < length; i++) {
+                for (int i = 1; i <= length; i++) {
                     char c = readByte(reg_file[R3] + i);
                     cout << c;
                 }
+                cout << std::flush;
 
-                uint8_t terminator = readByte(addr + length);
+                uint8_t terminator = readByte(addr + length + 1);
                 if (terminator != '\0') invalidInstruction();
 
                 return true;
@@ -1744,22 +1846,30 @@ bool TRP() {
                 invalidInstruction();
             }
         }
+        // Read a newline terminated string from stdin and store it in memory as a null-terminated pascal-style string whose starting address is in R3.
+        // Do not store the newline
         case 6: {
             try {
-                uint8_t addr = reg_file[R3];
+                uint32_t addr = reg_file[R3];
                 string ln;
-                if (!getline(cin, ln)) {
-                    return false;
+                if (!getline(cin, ln)) return false;
+
+                const size_t N = ln.size();
+                uint8_t stringbuild[N + 2];
+
+                stringbuild[0] = static_cast<uint8_t>(N);
+
+                for (size_t i = 0; i < N; ++i) {
+                    stringbuild[i + 1] = static_cast<uint8_t>(ln[i]);
+                    // cout << stringbuild[i];
+                }
+                stringbuild[N + 1] = '\0';
+
+                for (size_t i = 0; i < N + 2; ++i) {
+                    writeByte(addr + i, stringbuild[i]);
                 }
 
-                uint8_t length = static_cast<uint8_t>(ln.size() + 1);
-                writeByte(addr, length);
-
-                for (size_t i = 0; i < ln.size(); i++) {
-                    writeByte(addr + 1 + i, static_cast<uint8_t>(ln[i]));
-                }
-
-                writeByte(addr + 1 + ln.size(), 0u);
+                // cout << stringbuild << endl;
 
                 return true;
             } catch (const exception&) {
@@ -1860,7 +1970,7 @@ bool IALLC() {
 }
 
 bool PSHR() {
-    // set sp = sp - 4, place the word in RS onto the stack.
+    // set sp = sp - 4, place the word in RS onto the stack.ˇ
     try {
         uint32_t val = data_regs[REG_VAL_1];
         uint32_t newsp = reg_file[SP] - 4;
@@ -1938,19 +2048,42 @@ bool POPB() {
 bool CALL() {
     // Push PC onto stack, update PC to address
     try {
-        uint32_t retAddr = reg_file[PC];
-        uint32_t newSP = reg_file[SP] - 4;
-        updateSP(newSP);
+        uint32_t returnPC = reg_file[PC] + 8;
 
-        writeWord(newSP, retAddr);
+        uint32_t newSP = reg_file[SP] - sizeof(uint32_t);
 
-        uint32_t targetJmp = cntrl_regs[IMMEDIATE];
+        if (newSP < reg_file[SL] || newSP + sizeof(uint32_t) > reg_file[SB]) {
+            invalidInstruction();
+            return false;
+        }
 
-        if (!is_valid_addr(targetJmp)) return false;
+        writeWord(newSP, returnPC);
+        reg_file[SP] = newSP;
 
-        reg_file[PC] = targetJmp;
+        uint32_t target = cntrl_regs[IMMEDIATE];
 
+        if (!is_valid_addr(target)) {
+            invalidInstruction();
+            return false;
+        }
+
+        reg_file[PC] = target;
         return true;
+
+        // uint32_t retAddr = reg_file[PC];
+        // uint32_t newSP = reg_file[SP] - 4;
+        // updateSP(newSP);
+        //
+        // writeWord(newSP, retAddr);
+        //
+        // uint32_t targetJmp = cntrl_regs[IMMEDIATE];
+        //
+        // if (!is_valid_addr(targetJmp)) return false;
+        //
+        // reg_file[PC] = targetJmp;
+        //
+        // return true;
+
     } catch (const exception&) {
         cerr << "Error in CALL" << endl;
         return false;
@@ -1960,11 +2093,30 @@ bool CALL() {
 bool RET() {
     // pop stack into PC
     try {
-        uint32_t sp = reg_file[SP];
+        uint32_t sp0 = reg_file[SP];
+        uint32_t returnPC = readWord(sp0);
 
-        reg_file[PC] = readWord(sp);
-        updateSP(sp + 4);
+        uint32_t newSP = sp0 + sizeof(uint32_t);
+
+        if (newSP > reg_file[SB] || sp0 < reg_file[SL]) {
+            invalidInstruction();
+            return false;
+        }
+
+        reg_file[SP] = newSP;
+
+        if (!is_valid_addr(returnPC)) {
+            invalidInstruction();
+            return false;
+        }
+
+        reg_file[PC] = returnPC;
         return true;
+        // uint32_t sp = reg_file[SP];
+        //
+        // reg_file[PC] = readWord(sp);
+        // updateSP(sp + 4);
+        //  return true;
 
     } catch (const exception&) {
         cerr << "Error in RET" << endl;
@@ -2111,6 +2263,9 @@ void dumpCacheSummary() {
 }
 
 void invalidInstruction() {
-    cout << "INVALID INSTRUCTION AT: " << (reg_file[PC] - 8) << endl;
+    dumpRegisterContents();
+    // dumpCacheVerbose();
+    //  dumpMemory(prog_mem, mem_size);
+    cout << "INVALID INSTRUCTION AT LINE: " << (lineCounter) << endl;
     exit(1);
 }
