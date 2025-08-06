@@ -423,6 +423,7 @@ uint32_t load_binary(const char* filename) {
     reg_file[SP] = mem_size;   // project 4 req 3
     reg_file[SL] = file_size;  // project 4 req 4
     reg_file[PC] = entry;
+    reg_file[HP] = reg_file[SL];
     STARTPOINT = entry;
     return 0;
 }
@@ -459,7 +460,6 @@ bool init_mem(unsigned int size) {
     reg_file[SB] = mem_size;
     reg_file[SP] = mem_size;
     reg_file[FP] = reg_file[SP];
-    reg_file[HP] = reg_file[SL];
 
     mem_cycle_cntr = 0;
 

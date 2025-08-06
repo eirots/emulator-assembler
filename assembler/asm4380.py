@@ -612,7 +612,7 @@ class Assembler:
                 sb.append(ESCAPES[esc])
             else:
                 sb.append(ch)
-            self.stream.next_char()
+                self.stream.next_char()
         
         if len(sb) > 255:
             self._print_error()  # broke max size rule 

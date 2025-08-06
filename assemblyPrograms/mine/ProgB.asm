@@ -8,28 +8,29 @@ divisor  .INT #0
 
 
         JMP  MAIN
-MOD     MOV  R8, FP
-        PSHR R8
-        MOV  FP, SP
+MOD     PSHR R8
         SDIV R2, R0, R1
         MUL  R3, R2, R1 
         SUB  R0, R0, R3
-        MOV  SP, FP 
         POPR R8
-        MOV  FP, R8 
         RET  
+
 MAIN    MOVI R3, prompt1    ;read dividend
         TRP  #5
         TRP  #2  ;get int from user 
         STR  R3, dividend
+
         MOVI R3, prompt2    ;read divisor
         TRP  #5
         TRP  #2 ;get second int from user
+
         STR  R3, divisor
         LDR  R0, dividend
         LDR  R1, divisor
+
         CALL MOD
         MOV  R4, R0
+
         LDR  R3, dividend
         TRP  #1
         MOVI R3, prompt3
