@@ -4,6 +4,7 @@
 BUILD_DIR := build
 CXXFLAGS += -I$(PROJECT_ROOT)/include
 ASM_SRC := $(if $(FILE),$(FILE),test/assemblerTest/example.asm)
+EMU_SRC := $(if $(FILE),$(FILE),build/example.bin)
 
 # ------------------------------------------------------------------
 # Build everything (configure if build/ does not exist).
@@ -28,8 +29,8 @@ test: build
 # ------------------------------------------------------------------
 # Run with cache option 1, used for quick checks 
 # ------------------------------------------------------------------
-emu_run: build
-	@cd build && ./bin/emu4380 prog_a.bin -c 1
+#emu_run: build
+#	@cd build && ./bin/emu4380 prog_a.bin -c 1
 
 
 # ------------------------------------------------------------------
@@ -47,6 +48,14 @@ assemble:
 	@cp $(ASM_SRC) $(BUILD_DIR)/
 	@echo "Assembling $(notdir $(ASM_SRC)) → $(notdir $(ASM_SRC:.asm=.bin))"
 	@python3 $(BUILD_DIR)/asm4380.py $(BUILD_DIR)/$(notdir $(ASM_SRC))
+
+# usage: make run FILE=path/to/MyProg.asm
+run: assemble build
+	@echo "Running emulator on $(notdir $(FILE:.asm=.bin))"
+	@cd $(BUILD_DIR) && ./bin/emu4380 $(notdir $(FILE:.asm=.bin)) 
+
+asm_test:
+	@pytest -v
 # ------------------------------------------------------------------
 # Assemble + run example in one go
 # ------------------------------------------------------------------

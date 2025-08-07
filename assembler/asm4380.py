@@ -17,6 +17,8 @@ class States(Enum):
     BEGIN_DIRECTIVE = auto() 
     INT_DIRECTIVE = auto()
     BYT_DIRECTIVE = auto()
+    BTS_DIRECTIVE = auto()
+    STR_DIRECTIVE = auto()
     NUMBER_FOUND = auto()
     DIRECTIVE_FOUND = auto()
     DIRECTIVE_DONE = auto()
@@ -28,6 +30,8 @@ class States(Enum):
 class Directive(Enum): 
     INT = "INT"
     BYT = "BYT"
+    BTS = "BTS"
+    STR = "STR"
 
 
 class Mnemonic(IntEnum):
@@ -57,9 +61,20 @@ class Mnemonic(IntEnum):
     DIV = 0x18
     SDIV = 0x19
     DIVI = 0x1A
+    AND = 0x1B
+    OR = 0x1C 
     CMP = 0x1D
     CMPI = 0x1E
     TRP = 0x1F
+    ALCI = 0x20 
+    ALLC = 0x21 
+    IALLC = 0x22
+    PSHR = 0x23
+    PSHB = 0x24
+    POPR = 0x25
+    POPB = 0x26
+    CALL = 0x27
+    RET = 0x28 
 
 
 REG_MAP = {name: i for i, name in enumerate([
@@ -116,9 +131,20 @@ VALID_OPS = {
         "DIV",
         "SDIV",
         "DIVI",
+        "AND",
+        "OR",
         "CMP",
         "CMPI",
-        "TRP"  
+        "TRP",
+        "ALCI",
+        "ALLC",
+        "IALLC",
+        "PSHR",
+        "PSHB",
+        "POPR",
+        "POPB",
+        "CALL",
+        "RET"
     }
 
 
@@ -184,7 +210,7 @@ class CharStream:
         return        
 
 
-class Parser:
+class Assembler:
 
     def __init__(self, path):
         self.stream = CharStream(path)
@@ -210,6 +236,8 @@ class Parser:
             States.BEGIN_DIRECTIVE: self._begin_directive,
             States.INT_DIRECTIVE: self._int_directive,
             States.BYT_DIRECTIVE: self._byt_directive,
+            States.BTS_DIRECTIVE: self._bts_directive,
+            States.STR_DIRECTIVE: self._str_directive,
             States.NUMBER_FOUND: self._number_found,
             States.LINE_FINISHED: self._line_finished,
             States.DIRECTIVE_DONE: self._directive_done,
@@ -286,11 +314,16 @@ class Parser:
     def _begin_code(self) -> None: 
         # Below is valid instruction format: 
         # [optional_label] <operator> <operand_list> [optional_comment]
+        self.stream.consume_white()
+        op_characters = []
         
-        if self.stream.peek(4)[3] == " ":
-            op = "".join(self.stream.next_n(3))
-        else:
-            op = "".join(self.stream.next_n(4))
+        while True:
+            nxt = self.stream.peek()
+            if nxt.isspace():
+                break
+            op_characters.append(self.stream.next_char())
+            
+        op = "".join(op_characters).upper()
         
         if op not in VALID_OPS:
             return self._print_error()
@@ -392,23 +425,27 @@ class Parser:
             self._print_error()
             return
 
-        s = self.stream.peek(3).upper()  # looking for int or byt
+        s = self.stream.peek(3).upper()  # looking for int, byt, bts or str
         # print(s)
 
         if s == Directive.INT.value:
-            for _ in range(3):
-                self.stream.next_char()
             self.state = States.INT_DIRECTIVE
             # print("found int directive")
-            return
         elif s == Directive.BYT.value:
-            for _ in range(3):
-                self.stream.next_char()
             self.state = States.BYT_DIRECTIVE
             # print("found byt directive")
-            return 
+        elif s == Directive.BTS.value:
+            self.state = States.BTS_DIRECTIVE
+            # print("found bts directive")
+        elif s == Directive.STR.value:
+            self.state = States.STR_DIRECTIVE
+            # print("found str directive")
         else:
-            return self._print_error()
+            return self._print_error()  # anything else is not a valid directive 
+        
+        for _ in range(3):
+                self.stream.next_char()
+        return;
     
     def _int_directive(self):
         self.stream.consume_white()
@@ -435,6 +472,7 @@ class Parser:
             n = int(text, 10) 
         except ValueError:
             return self._print_error()
+        # print("spitting out n right here ")
         # print(n)
         self._store_number_in_byte_list(n)
 
@@ -457,14 +495,19 @@ class Parser:
         self.stream.consume_white()
         
         nxt = self.stream.peek()
+        
+        if nxt == "#":
+            self.stream.next_char()
+            nxt = self.stream.peek()
+            
         # decimal case 
         if nxt.isdigit():
             digi = []
             while self._is_alpha_numeric():
                 digi.append(self.stream.next_char())
             n = int("".join(digi), 10)
-            self._store_byt_in_byte_list(n, width=1)
-            self.state = States.LINE_FINISHED
+            self._store_number_in_byte_list(n, width=1)
+            self.state = States.DIRECTIVE_DONE
             return
 
         # character case
@@ -493,9 +536,139 @@ class Parser:
             
         return self._print_error()
     
+    def _bts_directive(self):
+        # Required unsigned deicmal value. This value is the number of bytes to be allocated 
+        # examples:  .BTS #25 
+        #           .BTS #5
+        #           a_label .BTS #20
+        # Allocates the specified number of bytes in place and initializes them all to 0. If an optional label is present, the label shall be associated with the address of the first byte allocated. 
+        # TODO:
+        self.stream.consume_white()
+        if self.stream.peek() != "#":
+            return self._print_error()
+        
+        self.stream.next_char()
+        nxt = self.stream.peek()
+        
+        if nxt.isdigit():
+            digi = []
+            while self.stream.peek().isdigit():
+                digi.append(self.stream.next_char())
+            width = int("".join(digi), 10)
+            
+            self._store_number_in_byte_list(0, width)
+            self.state = States.DIRECTIVE_DONE
+            return
+        else:
+            return self._print_error()
+                
+        # self.data_bytes.extend(b'\x00' * 8)
+
+    def _str_directive(self):
+        
+        self.stream.consume_white()
+        # print("right here, line below, we're looking at ")
+        # print(self.stream.peek())
+        
+        if self.stream.peek() != '\"' and self.stream.peek() != "#":
+            return self._print_error()
+        
+        str_type = self.stream.next_char()
+        
+        if str_type == '"': self._parse_str_string()  # string case 
+        elif str_type == "#": self._parse_str_numeric()  # numeric case
+        else: self._print_error()  # should never hit this, but better safe than sorry 
+        
+        self.state = States.DIRECTIVE_DONE
+        return
+    
+    def _parse_str_string(self):
+
+        ESCAPES = {
+            't': "\t",
+            '\\': '\\',
+            'n': '\n',
+            "'": "'",
+            '"': '"',
+            'r': '\r',
+            'b': '\b'
+            }
+        
+        # print("did we make it in here? ")
+        
+        # string case
+        sb = []
+        while True:
+            ch = self.stream.peek();
+            
+            if ch == '"':
+                break
+            if ch == '\\':
+                self.stream.next_char()
+                esc = self.stream.next_char()
+                
+                if esc not in ESCAPES:
+                    return self._print_error()
+                sb.append(ESCAPES[esc])
+            else:
+                sb.append(ch)
+                self.stream.next_char()
+        
+        if len(sb) > 255:
+            self._print_error()  # broke max size rule 
+        
+        self.stream.next_char()  # consume closing quote 
+        
+        start = len(self.data_bytes)
+        total = len(sb) + 2
+            
+        self._store_number_in_byte_list(0, total)  # allocates a number of bytes equal to the length of the string + 2
+        
+        self.data_bytes[start] = len(sb)  # first byte is initalized to the length of the string 
+        
+        for idx, ch in enumerate(sb, start=1):
+            self.data_bytes[start + idx] = ord(ch)
+        
+        self.data_bytes[start + total - 1] = 0   
+            
+        # Required double quote delimited string OR a numeric literal. 255 is the max string length
+        # Allocates a number of bytes equal to the length of the string + 2. The first byte is initialized to the length of the string, 
+        # and the last byte to the null character. The remaining bytes in the middle are initlaized to the ascii values for the characters 
+        # in the string. Escape sequences like \n must be properly handled. 
+        return
+    
+    def _parse_str_numeric(self):
+        # Required numeric literal. 255 max val of numeric literal 
+        # Allocates a number of bytes equal to the numeric literal + 2. The first byte is initalized to the value of the numeric literal and the remaining bytes are initialized to zeros. 
+        # TODO:
+        
+        sb = []
+        while True:
+            ch = self.stream.peek()
+            if ch.isnumeric():
+                sb.append(ch)
+                self.stream.next_char()
+            elif not ch.isnumeric():
+                break
+            else:
+                return self._print_error()
+                
+        toreserve = int("".join(sb))
+        
+        if(toreserve > 255):
+            self._print_error()  # broke max value rule 
+        
+        start = len(self.data_bytes)
+        total = toreserve + 2
+        
+        self._store_number_in_byte_list(0, total)
+        self.data_bytes[start] = toreserve
+                    
+        return
+
     def _directive_done(self):
         self.stream.consume_white()
-
+        
         if self.stream.peek() != "\n" and self.stream.peek() != ";":
             print(self.stream.peek())
             self._print_error()
@@ -617,9 +790,20 @@ class Parser:
         "DIV":self._emit_div,
         "SDIV":self._emit_sdiv,
         "DIVI":self._emit_divi,
+        "AND":self._emit_and,
+        "OR": self._emit_or,
         "CMP": self._emit_cmp,
         "CMPI": self._emit_cmpi,
-        "TRP": self._emit_trp
+        "TRP": self._emit_trp,
+        "ALCI":self._emit_alci,
+        "ALLC":self._emit_allc,
+        "IALLC":self._emit_iallc,
+        "PSHR":self._emit_pshr,
+        "PSHB":self._emit_pshb,
+        "POPR":self._emit_popr,
+        "POPB":self._emit_popb,
+        "CALL":self._emit_call,
+        "RET":self._emit_ret
     }
         
         for op, operands, addr in self.entries:
@@ -716,6 +900,9 @@ class Parser:
         f.close()
         # self.debugDump()
         return
+    
+    def _get_bytes(self):
+        return bytes(self.data_bytes)
     
     # --------------------------------
     # Emitters
@@ -973,6 +1160,27 @@ class Parser:
         self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)   
         return
 
+    def _emit_and(self, operands, addr):
+        # ADD RD RS1 RS2 DC
+            
+        opcode = Mnemonic.AND.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = self._resolve_operand(operands[2], addr + 3)  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+        return
+
+    def _emit_or (self, operands, addr):
+        # OR RD RS1 RS2 DC 
+        opcode = Mnemonic.OR.value  # Mnemonic.XXXX.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = self._resolve_operand(operands[2], addr + 3)  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+        return
+    
     def _emit_cmp(self, operands, addr):
         opcode = Mnemonic.CMP.value  # Mnemonic.XXXX.value
         operand_1 = self._resolve_operand(operands[0], addr + 1)  # RD 
@@ -1002,7 +1210,106 @@ class Parser:
         self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm) 
         return
 
+    def _emit_alci (self, operands, addr):
     
+        # [operand_value] [operand_1] [operand_2] [operand_3] [immediate_value]
+        
+        opcode = Mnemonic.ALCI.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+        
+        return
+
+    def _emit_allc (self, operands, addr):
+
+        opcode = Mnemonic.ALLC.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+        return
+
+    def _emit_iallc (self, operands, addr):
+
+        # [operand_value] [operand_1] [operand_2] [operand_3] [immediate_value]
+        
+        opcode = Mnemonic.IALLC.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)
+        operand_2 = self._resolve_operand(operands[1], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm) 
+        return
+
+    def _emit_pshr (self, operands, addr):
+
+        opcode = Mnemonic.PSHR.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+        return
+
+    def _emit_pshb (self, operands, addr):
+
+        opcode = Mnemonic.PSHB.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+        return
+
+    def _emit_popr (self, operands, addr):
+
+        opcode = Mnemonic.POPR.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+        return
+
+    def _emit_popb (self, operands, addr):
+
+        opcode = Mnemonic.POPB.value
+        operand_1 = self._resolve_operand(operands[0], addr + 1)  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)    
+        return
+
+    def _emit_call (self, operands, addr):
+
+        # [operand_value] [operand_1] [operand_2] [operand_3] [immediate_value]
+        
+        opcode = Mnemonic.CALL.value
+        operand_1 = 0  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = self._resolve_operand(operands[0], addr + 4)  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm)  
+        return
+
+    def _emit_ret (self, operands, addr):
+   
+        # [operand_value] [operand_1] [operand_2] [operand_3] [immediate_value]
+        
+        opcode = Mnemonic.RET.value
+        operand_1 = 0  #  self._resolve_operand(operands[X], addr + 1)
+        operand_2 = 0  #  self._resolve_operand(operands[X], addr + 2)
+        operand_3 = 0  #  self._resolve_operand(operands[X], addr + 3) 
+        imm = 0  #        self._resolve_operand(operands[1], addr + 4)  
+        self._write_bytes(addr, opcode, operand_1, operand_2, operand_3, imm) 
+        return
+
+
 # --------------------------------
 # cli helpers
 # --------------------------------
@@ -1048,7 +1355,7 @@ def main(argv=None):
     outfilename = infilename.removesuffix(".asm")
     outfilename += ".bin"
 
-    p = Parser(infilename)
+    p = Assembler(infilename)
     p.run()
     p._write_bin(outfilename)
     # print(outfilename)

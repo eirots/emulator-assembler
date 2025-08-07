@@ -51,6 +51,16 @@ TEST_F(LoaderTest, PcUnaffectedByLoad) { EXPECT_EQ(reg_file[PC], prog_mem[0] |
                                                                      prog_mem[1] << 8 |
                                                                      prog_mem[2] << 16 |
                                                                      prog_mem[3] << 24); }
+TEST_F(LoaderTest, InitializesStackandHeapBounds) {
+    EXPECT_EQ(reg_file[SB], kMem);
+    EXPECT_EQ(reg_file[SP], kMem);
+
+    std::ifstream in(kGoodBin, std::ios::binary | std::ios::ate);
+    ASSERT_TRUE(in) << "Couldn't open bin file " << kGoodBin;
+    auto file_size = static_cast<uint32_t>(in.tellg());
+
+    EXPECT_EQ(reg_file[SL], file_size) << "SL should be initialized to first byte past instructions";
+}
 
 // -----------------------------------------------------------------------------
 // 2.  Generic instruction fixture
@@ -62,6 +72,9 @@ class InstrTest : public ::testing::Test {
         std::memset(prog_mem, 0, kMem);
         std::memset(reg_file, 0, 22 * sizeof(uint32_t));
         runBool = true;
+        reg_file[PC] = 0;
+        reg_file[SL] = 0;
+        reg_file[SB] = kMem;
         reg_file[PC] = 0;
     }
 
@@ -666,6 +679,302 @@ TEST_F(CacheTest, FullyAssociativeEviction) {
     EXPECT_GT(mem_cycle_cntr, 2);
 }
 
+// -----------------------------------------------------------------------------
+// 6.  Logical AND and OR tests
+// -----------------------------------------------------------------------------
+struct LogicCase {
+    uint8_t opcode, rs1, rs2;
+    uint32_t expect;
+    bool ok;
+};
+
+static const LogicCase kLogicCases[] = {
+    // opcode rs1 rs2 expect ok
+    {OP_AND, 1, 1, 1, true},
+    {OP_AND, 1, 0, 0, true},
+    {OP_AND, 0, 0, 0, true},
+    {OP_AND, 0x54, 0x54, 1, true},
+    {OP_AND, 0x54, 0, 0, true},
+
+    {OP_OR, 1, 1, 1, true},
+    {OP_OR, 1, 0, 1, true},
+    {OP_OR, 0, 1, 1, true}};
+
+class LogicParam : public InstrTest,
+                   public ::testing::WithParamInterface<LogicCase> {};
+
+TEST_P(LogicParam, ExecuteLogicalOps) {
+    const auto& tc = GetParam();
+
+    reg_file[R0] = tc.rs1;
+    reg_file[R15] = tc.rs2;
+
+    loadInstr(tc.opcode, 5, 0, 15, 0);
+
+    ASSERT_TRUE(fetch());
+    ASSERT_TRUE(decode());
+    ASSERT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[5], tc.expect)
+        << "opcode = " << +tc.opcode
+        << " rs1=" << tc.rs1
+        << " rs2=" << tc.rs2;
+}
+
+// -----------------------------------------------------------------------------
+// 7.  Procedure / Stack instruction tests
+// -----------------------------------------------------------------------------
+struct PushCase {
+    uint8_t opcode;
+    uint8_t rs;
+    uint32_t initSP, val, expectSP;
+};
+
+static const PushCase kPushCases[]{
+    // OPCODE, rs, initSP, val, expectSP
+
+    {OP_PSHR, R2, 100u, 0xBEEF, 96u},
+    {OP_PSHB, R3, 50u, 0xABu, 49u}};
+
+class PushParam : public InstrTest,
+                  public ::testing::WithParamInterface<PushCase> {};
+
+TEST_P(PushParam, ExecutePush) {
+    const auto& tc = GetParam();
+
+    reg_file[tc.rs] = tc.val;
+    reg_file[SP] = tc.initSP;
+
+    loadInstr(tc.opcode, tc.rs, 0, 0, 0);
+    ASSERT_TRUE(fetch());
+    ASSERT_TRUE(decode());
+    ASSERT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[SP], tc.expectSP);
+
+    if (tc.opcode == OP_PSHR) {
+        uint32_t got = 0;
+
+        for (int i = 0; i < 4; i++) {
+            got |= prog_mem[tc.expectSP + i] << (8 * i);
+        }
+
+        EXPECT_EQ(got, tc.val);
+    } else {
+        uint8_t got = prog_mem[tc.expectSP];
+        EXPECT_EQ(got, static_cast<uint8_t>(tc.val)) << "Expected " << static_cast<uint8_t>(tc.val) << " but got " << got;
+    }
+}
+
+struct PopCase {
+    uint8_t opcode, rd;
+    uint32_t initSP, memVal, expectSP, expectReg;
+};
+
+static const PopCase kPopCases[]{
+    // opcode, rd, initSP, expectSP, expectReg
+    {OP_POPR, R4, 200u, 0x1234u, 204u, 0x1234u},
+    //{OP_POPB, R5, 20u, 0xCDu, 21u, 0xCDu}
+};
+
+class PopParam : public InstrTest,
+                 public ::testing::WithParamInterface<PopCase> {};
+
+TEST_P(PopParam, ExecutePop) {
+    const auto& tc = GetParam();
+    reg_file[SP] = tc.initSP;
+
+    if (tc.opcode == OP_POPR) {
+        for (int i = 0; i < 4; i++) {
+            prog_mem[tc.initSP + i] = (tc.memVal >> (8 * i)) & 0xFF;
+        }
+    } else {
+        prog_mem[tc.initSP] = static_cast<uint8_t>(tc.memVal);
+    }
+
+    loadInstr(tc.opcode, tc.rd, 0, 0, 0);
+    ASSERT_TRUE(fetch());
+    ASSERT_TRUE(decode());
+    ASSERT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[SP], tc.expectSP);
+    EXPECT_EQ(reg_file[tc.rd], tc.expectReg);
+}
+
+struct CallCase {
+    uint8_t opcode;
+    uint32_t address;
+    uint32_t expectedPC;
+    uint32_t expectedRetAddr;
+};
+
+static const CallCase kCallCases[]{
+    {OP_CALL, 0x42, 0x42, 8u},
+};
+
+class CallParam : public InstrTest,
+                  public ::testing::WithParamInterface<CallCase> {};
+
+TEST_P(CallParam, ExecuteCall) {
+    const auto& tc = GetParam();
+
+    reg_file[SL] = 0;
+    reg_file[SB] = kMem;
+    reg_file[SP] = kMem;
+
+    loadInstr(tc.opcode, 0, 0, 0, tc.address);
+    ASSERT_TRUE(fetch());
+    ASSERT_TRUE(decode());
+    ASSERT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[PC], tc.expectedPC);
+    EXPECT_EQ(reg_file[SP], kMem - 4u);
+
+    uint32_t got = 0;
+    for (int i = 0; i < 4; i++) {
+        got |= static_cast<uint32_t>(prog_mem[reg_file[SP] + i]) << (8 * i);
+    }
+
+    EXPECT_EQ(got, tc.expectedRetAddr);
+}
+
+struct ReturnCase {
+    uint8_t opcode;
+    uint32_t initSP, memVal, expectedSP, expectedPC;
+};
+
+static const ReturnCase kReturnCases[]{
+    // opdcode  initsp memval  expectedSp exepctedPC
+    {OP_RET, 100, 0xDEAD, 104u, 0xDEAD},
+    {OP_RET, 8u, 0x1234, 12u, 0x1234}};
+
+class ReturnParam : public InstrTest,
+                    public ::testing::WithParamInterface<ReturnCase> {};
+
+TEST_P(ReturnParam, ExecuteReturn) {
+    const auto& tc = GetParam();
+
+    reg_file[SL] = 0;
+    reg_file[SB] = kMem;
+    reg_file[SP] = tc.initSP;
+
+    for (int i = 0; i < 4; i++) {
+        prog_mem[tc.initSP + i] = (tc.memVal >> (i * 8)) & 0xFF;
+    }
+
+    loadInstr(tc.opcode, 0, 0, 0, 0);
+    ASSERT_TRUE(fetch());
+    ASSERT_TRUE(decode());
+    ASSERT_TRUE(execute());
+
+    EXPECT_EQ(reg_file[SP], tc.expectedSP);
+
+    EXPECT_EQ(reg_file[PC], tc.expectedPC);
+}
+
+struct HeapCase {
+    uint8_t opcode, rd, rs1;
+    uint32_t imm, setupPointer, setupSize, initialHP;
+    bool shouldPass;
+    uint32_t expectOldHP, expectNewHP;
+};
+
+static const HeapCase kHeapCases[]{
+    /* opdcode rd rs1 imm ptr size inithp ok oldhp newhp*/
+    {OP_ALCI, 5, 0, 16, 0, 0, 100, true, 100, 116},
+    {OP_ALCI, 3, 0, 10000000, 0, 0, 50, false, 0, 0},
+
+    {OP_ALLC, 4, 0, 20, 0, 30, 10, true, 10, 40},
+    {OP_ALLC, 4, 0, 200, 0, 10000000, 0, false, 0, 0},
+
+    {OP_IALLC, 6, 2, 0, 12, 25, 0, true, 0, 25},
+    {OP_IALLC, 6, 2, 0, 20, 10000000, 0, false, 0, 0}};
+
+class HeapParam : public InstrTest,
+                  public ::testing::WithParamInterface<HeapCase> {};
+
+TEST_P(HeapParam, ExecuteHeapInstructions) {
+    const auto& tc = GetParam();
+
+    reg_file[SL] = 0;
+    reg_file[SB] = kMem;
+    reg_file[SP] = kMem;
+    reg_file[HP] = tc.initialHP;
+
+    if (tc.opcode == OP_IALLC) {
+        reg_file[tc.rs1] = tc.setupPointer;
+        for (int i = 0; i < 4; i++) {
+            prog_mem[tc.setupPointer + i] = (tc.setupSize >> (8 * i)) & 0xFF;
+        }
+    } else if (tc.opcode == OP_ALLC) {
+        for (int i = 0; i < 4; i++) {
+            prog_mem[tc.imm + i] = (tc.setupSize >> (8 * i)) & 0xFF;
+        }
+    }
+
+    loadInstr(tc.opcode, tc.rd, tc.rs1, 0, tc.imm);
+    ASSERT_TRUE(fetch());
+    ASSERT_TRUE(decode());
+    bool ok = execute();
+
+    EXPECT_EQ(ok, tc.shouldPass) << " expected decode failed";
+
+    if (tc.shouldPass) {
+        EXPECT_EQ(reg_file[tc.rd], tc.expectOldHP) << " failed at old HP";
+        EXPECT_EQ(reg_file[HP], tc.expectNewHP) << " failed at new hp";
+    }
+}
+
+TEST_F(InstrTest, Trap5_PrintPascalString) {
+    std::string message = "Beavis and Butthead is a good show.";
+    uint32_t addr = 100u;
+    reg_file[R3] = addr;
+
+    prog_mem[addr + 0] = static_cast<uint8_t>(message.size() + 1);
+
+    for (size_t i = 0; i < message.size(); ++i) {
+        prog_mem[addr + 1 + i] = static_cast<uint8_t>(message[i]);
+    }
+
+    prog_mem[addr + 1 + message.size()] = 0u;
+
+    testing::internal::CaptureStdout();
+
+    loadInstr(OP_TRP, 0, 0, 0, 5);
+    ASSERT_TRUE(fetch());
+    ASSERT_TRUE(decode());
+    ASSERT_TRUE(execute());
+
+    std::string out = testing::internal::GetCapturedStdout();
+    EXPECT_EQ(out, message);
+}
+
+TEST_F(InstrTest, Trap6_ReadPascalStringToMemory) {
+    std::string input = "CS4380 Test\n";
+    std::istringstream fakeIn(input);
+    auto* oldCin = std::cin.rdbuf(fakeIn.rdbuf());
+
+    uint32_t addr = 200u;
+    reg_file[R3] = addr;
+
+    loadInstr(OP_TRP, 0, 0, 0, 6);
+    ASSERT_TRUE(fetch());
+    ASSERT_TRUE(decode());
+    ASSERT_TRUE(execute());
+
+    std::cin.rdbuf(oldCin);
+
+    uint8_t len = prog_mem[addr];
+
+    EXPECT_EQ(len, input.size());
+
+    for (size_t i = 0; i + 1 < len; ++i) {
+        EXPECT_EQ(prog_mem[addr + 1 + i], static_cast<uint8_t>(input[i]));
+    }
+
+    EXPECT_EQ(prog_mem[addr + len], 0u);
+}
+
 INSTANTIATE_TEST_SUITE_P(AllArithmetic,
                          ArithParam,
                          ::testing::ValuesIn(kArithCases));
@@ -678,15 +987,42 @@ INSTANTIATE_TEST_SUITE_P(AllMoves,
                          MoveParam,
                          ::testing::ValuesIn(kMoveCases));
 
-INSTANTIATE_TEST_SUITE_P(AllIndirectStores, StoreParam,
+INSTANTIATE_TEST_SUITE_P(AllIndirectStores,
+                         StoreParam,
                          ::testing::ValuesIn(kStoreCases));
 
-INSTANTIATE_TEST_SUITE_P(AllIndirectLoads, LoadParam,
+INSTANTIATE_TEST_SUITE_P(AllIndirectLoads,
+                         LoadParam,
                          ::testing::ValuesIn(kLoadCases));
 
-INSTANTIATE_TEST_SUITE_P(AllCompares, CmpParam,
+INSTANTIATE_TEST_SUITE_P(AllCompares,
+                         CmpParam,
                          ::testing::ValuesIn(kCmpCases));
 
 INSTANTIATE_TEST_SUITE_P(Trps_zero_thru_four,
                          TrpParam,
                          ::testing::ValuesIn(kTrpCases));
+
+INSTANTIATE_TEST_SUITE_P(AllLogical,
+                         LogicParam,
+                         ::testing::ValuesIn(kLogicCases));
+
+INSTANTIATE_TEST_SUITE_P(AllPushes,
+                         PushParam,
+                         ::testing::ValuesIn(kPushCases));
+
+INSTANTIATE_TEST_SUITE_P(AllPops,
+                         PopParam,
+                         ::testing::ValuesIn(kPopCases));
+
+INSTANTIATE_TEST_SUITE_P(AllCalls,
+                         CallParam,
+                         ::testing::ValuesIn(kCallCases));
+
+INSTANTIATE_TEST_SUITE_P(AllReturns,
+                         ReturnParam,
+                         ::testing::ValuesIn(kReturnCases));
+
+INSTANTIATE_TEST_SUITE_P(AllHeap,
+                         HeapParam,
+                         ::testing::ValuesIn(kHeapCases));
