@@ -19,14 +19,13 @@ MAIN    MOVI R3, prompt1    ;read dividend
         TRP  #5
         TRP  #2  ;get int from user 
         STR  R3, dividend
-
         MOVI R3, prompt2    ;read divisor
         TRP  #5
         TRP  #2 ;get second int from user
 
         STR  R3, divisor
-        LDR  R0, dividend
-        LDR  R1, divisor
+        LDR  R0, dividend       ;unneeded, but I was using this program to practice INT directives. 
+        LDR  R1, divisor        ;unneeded, but I was using this program to practice INT directives. 
 
         CALL MOD
         MOV  R4, R0

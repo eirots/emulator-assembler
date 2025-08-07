@@ -1,4 +1,4 @@
-## Instructions
+## Supported Instructions
 
 |Value | Operator | Operand 1 | Operand 2 | Operand 3 | Immediate Value | Description| 
 |------|-----------|----------|-----------|-----------|-----------------|------------|
@@ -50,7 +50,7 @@
 |	39	|	CALL	|	DC	|	DC	|	DC	|	Address	|	Push PC onto stack, update PC to Address.	|
 |	40	|	RET	|	DC	|	DC	|	DC	|	DC	|	pop stack into PC	|
 
-## Directives
+## Supported Directives
 |Directive| Operand | Examples | Behavior | 
 |---------|---------|----------|----------|
 |	.INT	|	Optional signed decimal value in the range of -2147483648 to 2147483648, inclusive 	|	.INT #45 .INT #-12 .INT #2147483647	|	Allocates memory in place for a 4-byte integer and initializes it with the optional operand value. If no operand is provided the value is initialized to 0. |
